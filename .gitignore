@@ -1,0 +1,24 @@
+# Dependencias de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.env
+
+# Dependencias de Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Archivos de Docker
+*.pid
+db-data/
+django-db-data/
+
+# Archivos del sistema
+.DS_Store
+.idea/
+.vscode/
+

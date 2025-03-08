@@ -1,0 +1,106 @@
+
+services:
+  db_django:
+    image: mysql:latest
+    container_name: mysql_django
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 3664atanas
+      MYSQL_DATABASE: rigging
+      MYSQL_USER: nasko
+      MYSQL_PASSWORD: 3664atanas
+    ports:
+      - "3307:3306"  # Puerto diferente al de Flask
+    volumes:
+      - django-db-data:/var/lib/mysql
+    networks:
+      django_network:
+        ipv4_address: 172.26.0.3
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  admin_django:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin_django
+    restart: always
+    environment:
+      PMA_HOST: db_django
+      MYSQL_ROOT_PASSWORD: 3664atanas
+    ports:
+      - "8081:80"  # Puerto diferente al de Flask
+    networks:
+      django_network:
+        ipv4_address: 172.26.0.4
+
+  backend_django:
+    build:
+      context: ./backend  # Nueva carpeta para Django
+      dockerfile: Dockerfile
+    container_name: backend_django
+    env_file:
+      - .env
+    restart: always
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings
+      PYTHONPATH: /app
+    ports:
+      - "8000:8000"
+    networks:
+      django_network:
+        ipv4_address: 172.26.0.5
+    depends_on:
+      db_django:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  frontend_django:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_django
+    restart: always
+    ports:
+      - "5174:5173"  # Puerto diferente al de Flask
+    networks:
+      django_network:
+        ipv4_address: 172.26.0.6
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+  
+    working_dir: /app/frontend
+    command: [ "npm", "run", "dev", "--", "--host" ]
+
+  nginx_django:
+    image: nginx:latest
+    container_name: nginx_django
+    restart: always
+    volumes:
+      - ./nginx/nginx_django.conf:/etc/nginx/nginx.conf
+      - ./nginx/certs:/etc/nginx/certs
+    ports:
+      - "81:80"  # Puerto diferente al de Flask
+      - "444:443"
+    networks:
+      django_network:
+        ipv4_address: 172.26.0.7
+    depends_on:
+      - backend_django
+      - frontend_django
+
+networks:
+  django_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16  # Red separada para Django
+
+volumes:
+  django-db-data:
