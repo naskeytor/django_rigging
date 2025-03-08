@@ -1,14 +1,24 @@
-# Usar una imagen de Python con soporte para MySQL
+# Usa una imagen oficial de Python
 FROM python:3.11
 
-# Configurar directorio de trabajo
+# Instalar dependencias del sistema necesarias para MySQL
+RUN apt update && apt install -y \
+    default-libmysqlclient-dev \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Establecer el directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copiar archivos del proyecto
-COPY . .
+# Copiar los archivos del proyecto al contenedor
+COPY . /app/
 
-# Instalar dependencias
-RUN pip install --no-cache-dir django mysqlclient gunicorn
+# Instalar dependencias de Python
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Comando de inicio
+# Exponer el puerto en el que corre Django
+EXPOSE 8000
+
+# Comando para iniciar Django
 CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]

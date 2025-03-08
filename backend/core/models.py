@@ -1,0 +1,129 @@
+from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
+from datetime import date
+
+
+class Role(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class UserManager(BaseUserManager):
+    def create_user(self, username, email, password=None):
+        if not email:
+            raise ValueError("Users must have an email address")
+        user = self.model(username=username, email=self.normalize_email(email))
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password):
+        user = self.create_user(username, email, password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.save(using=self._db)
+        return user
+
+
+class User(AbstractBaseUser, PermissionsMixin):
+    username = models.CharField(max_length=100, unique=True)
+    email = models.EmailField(unique=True)
+    roles = models.ManyToManyField('Role', related_name='users')
+    reset_token = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    is_staff = models.BooleanField(default=False)
+
+    groups = models.ManyToManyField(Group, related_name="core_users")  # Cambié el related_name
+    user_permissions = models.ManyToManyField(Permission,
+                                              related_name="core_users_permissions")  # Cambié el related_name
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    def __str__(self):
+        return self.username
+
+
+class Manufacturer(models.Model):
+    manufacturer = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.manufacturer
+
+
+class Size(models.Model):
+    size = models.CharField(max_length=50, null=True)
+
+    def __str__(self):
+        return self.size
+
+
+class Status(models.Model):
+    status = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.status
+
+
+class ComponentType(models.Model):
+    component_type = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.component_type
+
+
+class Model(models.Model):
+    model = models.CharField(max_length=50)
+    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, related_name='models')
+
+    def __str__(self):
+        return self.model
+
+
+class Component(models.Model):
+    component_type = models.ForeignKey(ComponentType, on_delete=models.CASCADE, related_name='components')
+    model = models.ForeignKey(Model, on_delete=models.SET_NULL, null=True, related_name='components')
+    serial_number = models.CharField(max_length=50)
+    dom = models.DateField(default=date.today)
+    size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, related_name='components')
+    status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, related_name='components')
+    jumps = models.IntegerField(default=0)
+    aad_jumps_on_mount = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.serial_number
+
+
+class Rig(models.Model):
+    rig_number = models.CharField(max_length=10)
+    components = models.ManyToManyField(Component, related_name='rigs')
+    current_aad_jumps = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.rig_number
+
+
+class RiggingType(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Rigging(models.Model):
+    date = models.DateField(default=date.today)
+    serial_numbers = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    rigger = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='riggings')
+    rig = models.ForeignKey(Rig, on_delete=models.SET_NULL, null=True, related_name='riggings')
+    component = models.ForeignKey(Component, on_delete=models.SET_NULL, null=True, related_name='riggings')
+    type_rigging = models.ForeignKey(RiggingType, on_delete=models.CASCADE, related_name='riggings')
+
+    def __str__(self):
+        return f'Rigging {self.id} on {self.date}'
