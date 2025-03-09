@@ -35,7 +35,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=100, unique=True, null=True, blank=True)
     is_staff = models.BooleanField(default=False)
-
+    is_active = models.BooleanField(default=True)
     groups = models.ManyToManyField(Group, related_name="core_users")  # Cambié el related_name
     user_permissions = models.ManyToManyField(Permission,
                                               related_name="core_users_permissions")  # Cambié el related_name
@@ -78,11 +78,11 @@ class ComponentType(models.Model):
 
 
 class Model(models.Model):
-    model = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, related_name='models')
 
     def __str__(self):
-        return self.model
+        return self.name
 
 
 class Component(models.Model):

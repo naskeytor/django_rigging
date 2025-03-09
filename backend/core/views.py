@@ -1,13 +1,11 @@
 from django.shortcuts import render
 
 # Create your views here.
+from django.contrib.auth.models import Group
 from rest_framework import viewsets
 from .models import User, Role, Manufacturer, Size, Status, ComponentType, Model, Component, Rig, RiggingType, Rigging
 from .serializers import UserSerializer, RoleSerializer, ManufacturerSerializer, SizeSerializer, StatusSerializer, ComponentTypeSerializer, ModelSerializer, ComponentSerializer, RigSerializer, RiggingTypeSerializer, RiggingSerializer
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all()
