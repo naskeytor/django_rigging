@@ -11,65 +11,58 @@ class ComponentViewSet(viewsets.ModelViewSet):
     serializer_class = ComponentSerializer
     permission_classes = [IsAuthenticated]  # Solo usuarios autenticados pueden acceder
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """GET /api/components/ → Listar todos los componentes"""
-        components = Component.objects.all()
-        serializer = ComponentSerializer(components, many=True)
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         """POST /api/components/ → Agregar un nuevo componente sin serial duplicado"""
-        serial_number = request.data.get("serial_number", "").strip()  # ← Asegúrate de usar el campo correcto
+        serial_number = request.data.get("serial_number", "").strip()
 
-        if Component.objects.filter(serial_number__iexact=serial_number).exists():  # ← Evita duplicados
+        if Component.objects.filter(serial_number__iexact=serial_number).exists():
             return Response(
                 {"error": "Este número de serie ya existe."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = ComponentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
-    def update(self, request, pk=None):
-        """PUT /api/components/{id}/ → Editar un componente"""
+    def update(self, request, *args, **kwargs):
+        """PUT /api/components/{id}/ → Evitar actualizar con un serial_number duplicado"""
         component = self.get_object()
-        serializer = ComponentSerializer(component, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+        serial_number = request.data.get("serial_number", "").strip()
 
-    def destroy(self, request, pk=None):
+        if Component.objects.filter(serial_number__iexact=serial_number).exclude(id=component.id).exists():
+            return Response(
+                {"error": "Este número de serie ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
         """DELETE /api/components/{id}/ → Eliminar un componente"""
-        component = self.get_object()
-        component.delete()
-        return Response({"message": "Component deleted successfully"}, status=204)
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])
     def mount(self, request, pk=None):
         """POST /api/components/{id}/mount/ → Montar un componente en un rig"""
         component = self.get_object()
         rig_id = request.data.get('rig_id')
-        current_aad_jumps = request.data.get('current_aad_jumps', 0)
 
         if rig_id:
             rig = Rig.objects.filter(id=rig_id).first()
             if rig:
                 component.rigs.add(rig)
                 component.save()
-                return Response({"message": "Component successfully mounted"}, status=200)
+                return Response({"message": "Component successfully mounted"}, status=status.HTTP_200_OK)
 
-        return Response({"error": "Invalid rig_id"}, status=400)
+        return Response({"error": "Invalid rig_id"}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def umount(self, request, pk=None):
         """POST /api/components/{id}/umount/ → Desmontar un componente de un rig"""
         component = self.get_object()
-        current_aad_jumps = request.data.get('current_aad_jumps', 0)
-
         component.rigs.clear()  # Elimina la relación con el Rig
         component.save()
-        return Response({"message": "Component successfully unmounted"}, status=200)
+        return Response({"message": "Component successfully unmounted"}, status=status.HTTP_200_OK)

@@ -10,42 +10,38 @@ class RigViewSet(viewsets.ModelViewSet):
     serializer_class = RigSerializer
     permission_classes = [IsAuthenticated]  # Solo usuarios autenticados pueden acceder
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """GET /api/rigs/ → Listar todos los rigs"""
-        rigs = Rig.objects.all()
-        serializer = RigSerializer(rigs, many=True)
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         """POST /api/rigs/ → Agregar un nuevo rig sin duplicados"""
-        rig_number = request.data.get("rig_number", "").strip()  # ← Asegúrate de usar el campo correcto
+        rig_number = request.data.get("rig_number", "").strip()
 
-        if Rig.objects.filter(rig_number__iexact=rig_number).exists():  # ← Evita duplicados
+        if Rig.objects.filter(rig_number__iexact=rig_number).exists():
             return Response(
                 {"error": "Este número de rig ya existe."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = RigSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
-    def update(self, request, pk=None):
-        """PUT /api/rigs/{id}/ → Editar un rig"""
+    def update(self, request, *args, **kwargs):
+        """PUT /api/rigs/{id}/ → Evitar actualizar con un rig_number duplicado"""
         rig = self.get_object()
-        serializer = RigSerializer(rig, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+        rig_number = request.data.get("rig_number", "").strip()
 
-    def destroy(self, request, pk=None):
+        if Rig.objects.filter(rig_number__iexact=rig_number).exclude(id=rig.id).exists():
+            return Response(
+                {"error": "Este número de rig ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
         """DELETE /api/rigs/{id}/ → Eliminar un rig"""
-        rig = self.get_object()
-        rig.delete()
-        return Response({"message": "Rig deleted successfully"}, status=204)
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])
     def mount_component(self, request, pk=None):
@@ -53,14 +49,16 @@ class RigViewSet(viewsets.ModelViewSet):
         rig = self.get_object()
         component_id = request.data.get('component_id')
 
-        if component_id:
-            component = Component.objects.filter(id=component_id).first()
-            if component:
-                rig.components.add(component)
-                rig.save()
-                return Response({"message": "Component successfully mounted"}, status=200)
+        if not component_id:
+            return Response({"error": "Component ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"error": "Invalid component_id"}, status=400)
+        component = Component.objects.filter(id=component_id).first()
+        if not component:
+            return Response({"error": "Invalid component_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        rig.components.add(component)
+        rig.save()
+        return Response({"message": "Component successfully mounted"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def umount_component(self, request, pk=None):
@@ -68,11 +66,13 @@ class RigViewSet(viewsets.ModelViewSet):
         rig = self.get_object()
         component_id = request.data.get('component_id')
 
-        if component_id:
-            component = rig.components.filter(id=component_id).first()
-            if component:
-                rig.components.remove(component)
-                rig.save()
-                return Response({"message": "Component successfully unmounted"}, status=200)
+        if not component_id:
+            return Response({"error": "Component ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"error": "Component not found in this rig"}, status=400)
+        component = rig.components.filter(id=component_id).first()
+        if not component:
+            return Response({"error": "Component not found in this rig"}, status=status.HTTP_400_BAD_REQUEST)
+
+        rig.components.remove(component)
+        rig.save()
+        return Response({"message": "Component successfully unmounted"}, status=status.HTTP_200_OK)

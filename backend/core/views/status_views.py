@@ -10,45 +10,40 @@ class StatusViewSet(viewsets.ModelViewSet):
     serializer_class = StatusSerializer
     permission_classes = [IsAuthenticated]  # Solo usuarios autenticados pueden acceder
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """GET /api/statuses/ → Listar todos los estados"""
         print(f"🔹 Usuario autenticado: {request.user}")
         if not request.user.is_authenticated:
             print("❌ No autenticado en /api/statuses")
-            return Response({"error": "Unauthorized"}, status=401)
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        statuses = Status.objects.all()
-        serializer = StatusSerializer(statuses, many=True)
-        print("✅ Status enviados con éxito")
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         """POST /api/statuses/ → Agregar un nuevo estado sin duplicados"""
-        status_name = request.data.get("status", "").strip()  # ← Asegúrate de usar el campo correcto
+        status_name = request.data.get("status", "").strip()
 
-        if Status.objects.filter(status__iexact=status_name).exists():  # ← Usar "status" aquí
+        if Status.objects.filter(status__iexact=status_name).exists():
             return Response(
                 {"error": "Este estado ya existe."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = StatusSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
-    def update(self, request, pk=None):
-        """PUT /api/statuses/{id}/ → Editar un estado"""
-        status = self.get_object()
-        serializer = StatusSerializer(status, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+    def update(self, request, *args, **kwargs):
+        """PUT /api/statuses/{id}/ → Editar un estado evitando duplicados"""
+        status_instance = self.get_object()
+        status_name = request.data.get("status", "").strip()
 
-    def destroy(self, request, pk=None):
+        if Status.objects.filter(status__iexact=status_name).exclude(id=status_instance.id).exists():
+            return Response(
+                {"error": "Este estado ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
         """DELETE /api/statuses/{id}/ → Eliminar un estado"""
-        status = self.get_object()
-        status.delete()
-        return Response({"message": "Status deleted successfully"}, status=204)
+        return super().destroy(request, *args, **kwargs)

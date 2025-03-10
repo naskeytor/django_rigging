@@ -10,19 +10,16 @@ class ModelViewSet(viewsets.ModelViewSet):
     serializer_class = ModelSerializer
     permission_classes = [IsAuthenticated]  # Solo usuarios autenticados pueden acceder
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """GET /api/models/ → Listar todos los modelos"""
         print(f"🔹 Usuario autenticado: {request.user}")
         if not request.user.is_authenticated:
             print("❌ No autenticado en /api/models")
-            return Response({"error": "Unauthorized"}, status=401)
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        models = Model.objects.all()
-        serializer = ModelSerializer(models, many=True)
-        print("✅ Models enviados con éxito")
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         """POST /api/models/ → Agregar un nuevo modelo sin duplicados"""
         model_name = request.data.get("name", "").strip()
 
@@ -32,23 +29,21 @@ class ModelViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = ModelSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
-    def update(self, request, pk=None):
-        """PUT /api/models/{id}/ → Editar un modelo"""
-        model = self.get_object()
-        serializer = ModelSerializer(model, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+    def update(self, request, *args, **kwargs):
+        """PUT /api/models/{id}/ → Evitar actualizar con un modelo duplicado"""
+        model_instance = self.get_object()
+        model_name = request.data.get("name", "").strip()
 
-    def destroy(self, request, pk=None):
+        if Model.objects.filter(name__iexact=model_name).exclude(id=model_instance.id).exists():
+            return Response(
+                {"error": "Este modelo ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
         """DELETE /api/models/{id}/ → Eliminar un modelo"""
-        model = self.get_object()
-        model.delete()
-        return Response({"message": "Model deleted successfully"}, status=204)
+        return super().destroy(request, *args, **kwargs)

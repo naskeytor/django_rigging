@@ -9,47 +9,40 @@ class ComponentTypeViewSet(viewsets.ModelViewSet):
     serializer_class = ComponentTypeSerializer
     permission_classes = [IsAuthenticated]  # Solo usuarios autenticados pueden acceder
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """GET /api/component_types/ → Listar todos los tipos de componentes"""
         print(f"🔹 Usuario autenticado: {request.user}")
         if not request.user.is_authenticated:
             print("❌ No autenticado en /api/component_types")
-            return Response({"error": "Unauthorized"}, status=401)
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        component_types = ComponentType.objects.all()
-        serializer = ComponentTypeSerializer(component_types, many=True)
-        print("✅ ComponentTypes enviados con éxito")
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         """POST /api/component_types/ → Agregar un nuevo tipo de componente sin duplicados"""
-        component_type_name = request.data.get("component_type", "").strip()  # ← Asegúrate de usar el campo correcto
+        component_type_name = request.data.get("component_type", "").strip()
 
-        if ComponentType.objects.filter(component_type__iexact=component_type_name).exists():  # ← Usar "component_type" aquí
+        if ComponentType.objects.filter(component_type__iexact=component_type_name).exists():
             return Response(
                 {"error": "Este tipo de componente ya existe."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = ComponentTypeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        """PUT /api/component_types/{id}/ → Evitar actualizar con un tipo de componente duplicado"""
+        component_type_instance = self.get_object()
+        component_type_name = request.data.get("component_type", "").strip()
 
+        if ComponentType.objects.filter(component_type__iexact=component_type_name).exclude(id=component_type_instance.id).exists():
+            return Response(
+                {"error": "Este tipo de componente ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-    def update(self, request, pk=None):
-        """PUT /api/component_types/{id}/ → Editar un tipo de componente"""
-        component_type = self.get_object()
-        serializer = ComponentTypeSerializer(component_type, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+        return super().update(request, *args, **kwargs)
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request, *args, **kwargs):
         """DELETE /api/component_types/{id}/ → Eliminar un tipo de componente"""
-        component_type = self.get_object()
-        component_type.delete()
-        return Response({"message": "ComponentType deleted successfully"}, status=204)
+        return super().destroy(request, *args, **kwargs)
