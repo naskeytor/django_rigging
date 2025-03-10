@@ -1,9 +1,10 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from core.models import Component, Rig
 from core.serializers import ComponentSerializer
 from rest_framework.permissions import IsAuthenticated
+
 
 class ComponentViewSet(viewsets.ModelViewSet):
     queryset = Component.objects.all()
@@ -17,12 +18,20 @@ class ComponentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        """POST /api/components/ → Agregar un nuevo componente"""
+        """POST /api/components/ → Agregar un nuevo componente sin serial duplicado"""
+        serial_number = request.data.get("serial_number", "").strip()  # ← Asegúrate de usar el campo correcto
+
+        if Component.objects.filter(serial_number__iexact=serial_number).exists():  # ← Evita duplicados
+            return Response(
+                {"error": "Este número de serie ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = ComponentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
         """PUT /api/components/{id}/ → Editar un componente"""

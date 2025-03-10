@@ -1,8 +1,9 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from core.models import Status
 from core.serializers import StatusSerializer
 from rest_framework.permissions import IsAuthenticated
+
 
 class StatusViewSet(viewsets.ModelViewSet):
     queryset = Status.objects.all()
@@ -22,12 +23,20 @@ class StatusViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        """POST /api/statuses/ → Agregar un nuevo estado"""
+        """POST /api/statuses/ → Agregar un nuevo estado sin duplicados"""
+        status_name = request.data.get("status", "").strip()  # ← Asegúrate de usar el campo correcto
+
+        if Status.objects.filter(status__iexact=status_name).exists():  # ← Usar "status" aquí
+            return Response(
+                {"error": "Este estado ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = StatusSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
         """PUT /api/statuses/{id}/ → Editar un estado"""

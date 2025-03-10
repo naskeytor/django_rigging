@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from core.models import Size
 from core.serializers import SizeSerializer
@@ -22,12 +22,20 @@ class SizeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        """POST /api/sizes/ → Agregar un nuevo tamaño"""
+        """POST /api/sizes/ → Agregar un nuevo tamaño sin duplicados"""
+        size_name = request.data.get("size", "").strip()  # ← Asegúrate de usar el campo correcto
+
+        if Size.objects.filter(size__iexact=size_name).exists():  # ← Usar "size" aquí
+            return Response(
+                {"error": "Este tamaño ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = SizeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
         """PUT /api/sizes/{id}/ → Editar un tamaño"""

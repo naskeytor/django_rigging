@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from core.models import Rig, Component
@@ -17,12 +17,20 @@ class RigViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        """POST /api/rigs/ → Agregar un nuevo rig"""
+        """POST /api/rigs/ → Agregar un nuevo rig sin duplicados"""
+        rig_number = request.data.get("rig_number", "").strip()  # ← Asegúrate de usar el campo correcto
+
+        if Rig.objects.filter(rig_number__iexact=rig_number).exists():  # ← Evita duplicados
+            return Response(
+                {"error": "Este número de rig ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = RigSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
         """PUT /api/rigs/{id}/ → Editar un rig"""
