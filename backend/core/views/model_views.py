@@ -1,8 +1,9 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from core.models import Model
 from core.serializers import ModelSerializer
 from rest_framework.permissions import IsAuthenticated
+
 
 class ModelViewSet(viewsets.ModelViewSet):
     queryset = Model.objects.all()
@@ -22,12 +23,20 @@ class ModelViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        """POST /api/models/ → Agregar un nuevo modelo"""
+        """POST /api/models/ → Agregar un nuevo modelo sin duplicados"""
+        model_name = request.data.get("name", "").strip()
+
+        if Model.objects.filter(name__iexact=model_name).exists():
+            return Response(
+                {"error": "Este modelo ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = ModelSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
         """PUT /api/models/{id}/ → Editar un modelo"""

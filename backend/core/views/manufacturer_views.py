@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from core.models import Manufacturer
 from core.serializers import ManufacturerSerializer
@@ -22,12 +22,21 @@ class ManufacturerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        """POST /api/manufacturers/ → Agregar un nuevo fabricante"""
+        """POST /api/manufacturers/ → Agregar un nuevo fabricante sin duplicados"""
+        manufacturer_name = request.data.get("manufacturer", "").strip()
+
+        if Manufacturer.objects.filter(manufacturer__iexact=manufacturer_name).exists():
+            return Response(
+                {"error": "Este fabricante ya existe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = ManufacturerSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     def update(self, request, pk=None):
         """PUT /api/manufacturers/{id}/ → Editar un fabricante"""
