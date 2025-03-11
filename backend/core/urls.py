@@ -11,11 +11,12 @@ from core.views.component_views import ComponentViewSet
 from core.views.rig_views import RigViewSet
 from core.views.rigging_type_views import RiggingTypeViewSet
 from core.views.rigging_views import RiggingViewSet
+from core.views.test_views import test_connection
 
 # Definir el router y registrar los ViewSets
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
-#router.register(r'roles', RoleViewSet)
+# router.register(r'roles', RoleViewSet)
 router.register(r'manufacturers', ManufacturerViewSet)
 router.register(r'sizes', SizeViewSet)
 router.register(r'statuses', StatusViewSet)
@@ -30,4 +31,5 @@ router.register(r'riggings', RiggingViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),  # Panel de administración de Django
     path('', include(router.urls)),  # Endpoints de la API
+    path('test/', test_connection, name='test_connection'),
 ]
