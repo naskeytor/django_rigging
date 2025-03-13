@@ -67,7 +67,7 @@ services:
     container_name: frontend_django
     restart: always
     ports:
-      - "5174:5173"  # Puerto diferente al de Flask
+      - "5174:5174"  # Puerto diferente al de Flask
     networks:
       django_network:
         ipv4_address: 172.26.0.6
@@ -79,6 +79,7 @@ services:
     command: [ "npm", "run", "dev", "--", "--host" ]
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - VITE_BACKEND_URL=http://backend_django:8000/api
 
   nginx_django:
     image: nginx:latest

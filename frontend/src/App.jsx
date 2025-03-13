@@ -1,21 +1,24 @@
-import { useEffect } from 'react';
-import { testBackendConnection } from './api/testConnection';
+import React from "react";
+import {Box} from "@mui/material";
+import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
+import Admin from "./pages/Admin";
+import Rigger from "./pages/Rigger";
+import User from "./pages/User";
+import Login from "./components/Login";
 
 function App() {
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await testBackendConnection();
-      } catch (error) {
-        console.error("Error en la conexión:", error);
-      }
-    };
-
-    // Llamamos la función y retornamos la promesa para evitar la advertencia
-    fetchData().catch(console.error);
-  }, []);
-
-  return <h1>React conectado a Django 🎉</h1>;
+    return (
+        <Box sx={{bgcolor: "background.default", minHeight: "100vh"}}>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<Login/>}/>
+                    <Route path="/admin" element={<Admin/>}/>
+                    <Route path="/rigger" element={<Rigger/>}/>
+                    <Route path="/user" element={<User/>}/>
+                </Routes>
+            </Router>
+        </Box>
+    );
 }
 
-export default App;
+export default App
