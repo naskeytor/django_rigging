@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {useState, useEffect} from "react";
+import {useNavigate} from "react-router-dom";
 import axios from "axios";
 import {
     Checkbox,
@@ -13,7 +13,7 @@ import {
     IconButton
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {Visibility, VisibilityOff} from "@mui/icons-material";
 
 const Login = () => {
     const [username, setUsername] = React.useState('');
@@ -30,35 +30,42 @@ const Login = () => {
     }, []);
 
     const handleLogin = async () => {
-        try {
-            const response = await axios.post(
-                "http://localhost:8000/api/auth/login/", // <-- Usa absoluta por ahora
-                { username, password },
-            );
+    try {
+        const response = await axios.post("http://localhost:8000/api/auth/login/", { username, password });
 
-            const { group, access, refresh } = response.data;
+        console.log("Respuesta de la API:", response.data); // 🔹 Ver qué devuelve la API
 
-            sessionStorage.setItem("role", group);
-            sessionStorage.setItem("accessToken", access);
-            sessionStorage.setItem("refreshToken", refresh);
+        const { group, access, refresh, user } = response.data;
 
-            switch (group) {
-                case "admin":
-                    navigate("/admin");
-                    break;
-                case "rigger":
-                    navigate("/rigger");
-                    break;
-                case "user":
-                    navigate("/user");
-                    break;
-                default:
-                    setError("Rol desconocido");
-            }
-        } catch (err) {
-            setError(err.message || "Error al iniciar sesión. Verifica tus credenciales.");
+        if (!user) {
+            throw new Error("La respuesta de la API no contiene datos de usuario");
         }
-    };
+
+        sessionStorage.setItem("role", group);
+        sessionStorage.setItem("accessToken", access);
+        sessionStorage.setItem("refreshToken", refresh);
+        sessionStorage.setItem("username", user.username || "Usuario");
+        sessionStorage.setItem("email", user.email || "user@example.com");
+        sessionStorage.setItem("userImage", user.image || "https://via.placeholder.com/40");
+
+        switch (group) {
+            case "admin":
+                navigate("/admin");
+                break;
+            case "rigger":
+                navigate("/rigger");
+                break;
+            case "user":
+                navigate("/user");
+                break;
+            default:
+                setError("Rol desconocido");
+        }
+    } catch (err) {
+        console.error("Error al iniciar sesión:", err);
+        setError(err.message || "Error al iniciar sesión. Verifica tus credenciales.");
+    }
+};
 
     return (
         <Paper elevation={10} sx={{padding: 4, width: 350, textAlign: "center", borderRadius: 3}}>

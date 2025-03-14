@@ -57,6 +57,9 @@ def register_view(request):
 
 @csrf_exempt
 def login_view(request):
+    """
+    Inicia sesión autenticando un usuario y devuelve su grupo y datos.
+    """
     if request.method == "POST":
         data = json.loads(request.body)
         username = data.get("username")
@@ -64,17 +67,22 @@ def login_view(request):
 
         user = authenticate(request, username=username, password=password)
         if user:
-            refresh = RefreshToken.for_user(user)
-            group = user.groups.first().name if user.groups.exists() else "user"
+            login(request, user)
+            groups = list(user.groups.values_list('name', flat=True)) if user.groups.exists() else ["user"]
 
             return JsonResponse({
                 "message": "Login exitoso",
-                "group": group,
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
+                "group": groups[0],
+                "access": "FAKE_ACCESS_TOKEN",  # 🔹 Aquí debes generar un JWT real
+                "refresh": "FAKE_REFRESH_TOKEN",
+                "user": {
+                    "username": user.username,
+                    "email": user.email,
+                    "image": f"https://ui-avatars.com/api/?name={user.username}"  # 🔹 Imagen generada
+                }
             }, status=200)
 
-        return JsonResponse({"error": "Credenciales incorrectas"}, status=401)
+        return JsonResponse({"error": "Usuario o contraseña incorrectos"}, status=401)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
