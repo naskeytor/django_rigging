@@ -4,14 +4,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { createTheme, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
 import { useNavigate } from "react-router-dom";
-
-const NAVIGATION = [
-    { segment: 'dashboard', title: 'Dashboard', icon: <DashboardIcon /> },
-];
 
 const demoTheme = createTheme({
     cssVariables: {
@@ -53,20 +50,7 @@ const demoTheme = createTheme({
     },
 });
 
-function DemoPageContent({ pathname }) {
-    return (
-        <Box sx={{ py: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <Typography>Dashboard content for {pathname}</Typography>
-        </Box>
-    );
-}
-
-DemoPageContent.propTypes = {
-    pathname: PropTypes.string.isRequired,
-};
-
-function DashboardLayoutAccount(props) {
-    const { window } = props;
+function DashboardLayoutAccount({ navigation, window }) {
     const navigate = useNavigate();
     const [session, setSession] = React.useState(null); // 🔹 Estado inicial vacío
 
@@ -90,6 +74,7 @@ function DashboardLayoutAccount(props) {
         }
     }, [navigate]);
 
+    // ✅ Definimos `authentication`
     const authentication = React.useMemo(() => ({
         signIn: (userData) => {
             sessionStorage.setItem("username", userData.name);
@@ -99,31 +84,34 @@ function DashboardLayoutAccount(props) {
             setSession({ user: userData });
         },
         signOut: () => {
-            sessionStorage.clear(); // 🔹 Borra toda la sesión
-            setSession(null); // 🔹 Cambia el estado para ocultar usuario en Navbar
-            navigate("/"); // 🔹 Redirige al login correctamente
+            sessionStorage.clear();
+            setSession(null);
+            navigate("/");
         },
     }), [navigate]);
 
-    const router = useDemoRouter('/dashboard');
+    console.log("Navigation data:", navigation); // ⬅️ Verifica que `navigation` tenga datos
 
     return (
         <AppProvider
             session={session}
-            authentication={authentication}
-            navigation={NAVIGATION}
-            router={router}
-            theme={demoTheme} // 🔹 Aplicamos el tema global
+            authentication={authentication} // ✅ Ahora `authentication` está definido
+            navigation={navigation}
+            router={useDemoRouter('/admin')}
+            theme={demoTheme}
             window={window}
         >
             <DashboardLayout>
-                <DemoPageContent pathname={router.pathname} />
+                <Box sx={{ py: 4, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                    <Typography>Dashboard content for {useDemoRouter('/admin').pathname}</Typography>
+                </Box>
             </DashboardLayout>
         </AppProvider>
     );
 }
 
 DashboardLayoutAccount.propTypes = {
+    navigation: PropTypes.array.isRequired,
     window: PropTypes.func,
 };
 
