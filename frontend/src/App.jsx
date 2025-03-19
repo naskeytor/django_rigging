@@ -9,7 +9,7 @@ import {Account} from "@toolpad/core/Account";
 import {AppProvider} from "@toolpad/core/AppProvider";
 import theme from "./theme"; // 🔹 Importamos el tema
 import DashboardLayout from "./components/DashboardLayout";
-import { ADMIN_NAVIGATION } from "./pages/Admin";
+import { ADMIN_NAVIGATION } from "./config/navigation.jsx";
 
 function App() {
     return (
@@ -18,7 +18,7 @@ function App() {
                 <Router>
                     <Routes>
                         <Route path="/" element={<Login/>}/>
-                        <Route path="/admin" element={<DashboardLayout navigation={ADMIN_NAVIGATION}><Admin/></DashboardLayout>}/>
+                        <Route path="/admin" element={<Admin navigation={ADMIN_NAVIGATION} />} />
                         <Route path="/rigger" element={<DashboardLayout><Rigger/></DashboardLayout>}/>
                         <Route path="/user" element={<DashboardLayout><User/></DashboardLayout>}/>
                     </Routes>

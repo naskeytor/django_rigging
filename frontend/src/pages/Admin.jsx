@@ -1,15 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import DashboardLayoutAccount from "../components/DashboardLayout";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import PeopleIcon from "@mui/icons-material/People"; // ⬅️ Importamos el icono de usuarios
-
-export const ADMIN_NAVIGATION = [
-    { segment: "dashboard", title: "Dashboard", icon: <DashboardIcon /> },
-    { segment: "users", title: "Users", icon: <PeopleIcon /> }, // ⬅️ Agregamos la pestaña de usuarios
-];
+import { ADMIN_NAVIGATION } from "../config/navigation";
+import UsersContent from "../components/UsersContent";
 
 const Admin = () => {
-    return <DashboardLayoutAccount navigation={ADMIN_NAVIGATION} />; // ⬅️ Pasamos correctamente `navigation`
+    const [activeTab, setActiveTab] = useState("dashboard");
+
+    console.log("🔍 Active Tab en Admin.jsx:", activeTab);
+
+    return (
+        <DashboardLayoutAccount navigation={ADMIN_NAVIGATION} onTabChange={setActiveTab}>
+            {activeTab === "users" ? (
+                <>
+                    <h2 style={{ color: "white" }}>📌 Cargando UsersContent...</h2>
+                    <UsersContent />
+                </>
+            ) : (
+                <h2 style={{ color: "white" }}>Bienvenido al Panel de Administración</h2>
+            )}
+        </DashboardLayoutAccount>
+    );
 };
 
 export default Admin;
