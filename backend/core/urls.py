@@ -32,8 +32,9 @@ router.register(r'riggings', RiggingViewSet)
 # Unificar urlpatterns en una sola lista
 urlpatterns = [
     path('admin/', admin.site.urls),  # Panel de administración de Django
+    path('', include(router.urls)),  # 👈 Incluimos todas las rutas del router
 
-path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # 👈 Login JWT
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # 👈 Login JWT
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 👈 Refrescar Tok
     path('', include(router.urls)),  # Endpoints de la API
     path('test/', test_connection, name='test_connection'),
