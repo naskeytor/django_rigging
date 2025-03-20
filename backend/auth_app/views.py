@@ -70,21 +70,25 @@ def login_view(request):
             login(request, user)
             groups = list(user.groups.values_list('name', flat=True)) if user.groups.exists() else ["user"]
 
+            # ✅ Generamos un JWT real
+            refresh = RefreshToken.for_user(user)
+
             return JsonResponse({
                 "message": "Login exitoso",
                 "group": groups[0],
-                "access": "FAKE_ACCESS_TOKEN",  # 🔹 Aquí debes generar un JWT real
-                "refresh": "FAKE_REFRESH_TOKEN",
+                "access": str(refresh.access_token),  # ✅ Token real
+                "refresh": str(refresh),
                 "user": {
                     "username": user.username,
                     "email": user.email,
-                    "image": f"https://ui-avatars.com/api/?name={user.username}"  # 🔹 Imagen generada
+                    "image": f"https://ui-avatars.com/api/?name={user.username}"
                 }
             }, status=200)
 
         return JsonResponse({"error": "Usuario o contraseña incorrectos"}, status=401)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
 
 
 def logout_view(request):

@@ -12,7 +12,7 @@ const Admin = () => {
         <DashboardLayoutAccount navigation={ADMIN_NAVIGATION} onTabChange={setActiveTab}>
             {activeTab === "users" ? (
                 <>
-                    <h2 style={{ color: "white" }}>📌 Cargando UsersContent...</h2>
+
                     <UsersContent />
                 </>
             ) : (
