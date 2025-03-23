@@ -15,10 +15,9 @@ from core.views.rigging_type_views import RiggingTypeViewSet
 from core.views.rigging_views import RiggingViewSet
 from core.views.test_views import test_connection
 
-# Definir el router y registrar los ViewSets
+# 🔹 Definir el router y registrar los ViewSets
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
-# router.register(r'roles', RoleViewSet)
 router.register(r'manufacturers', ManufacturerViewSet)
 router.register(r'sizes', SizeViewSet)
 router.register(r'statuses', StatusViewSet)
@@ -29,13 +28,13 @@ router.register(r'rigs', RigViewSet)
 router.register(r'rigging_types', RiggingTypeViewSet)
 router.register(r'riggings', RiggingViewSet)
 
-# Unificar urlpatterns en una sola lista
+# 🔹 Definir las rutas
 urlpatterns = [
     path('admin/', admin.site.urls),  # Panel de administración de Django
-    path('', include(router.urls)),  # 👈 Incluimos todas las rutas del router
+    path('', include(router.urls)),  # 👈 ERROR: Incluyendo el router sin prefijo
 
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # 👈 Login JWT
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 👈 Refrescar Tok
-    path('', include(router.urls)),  # Endpoints de la API
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 👈 Refrescar Token
+    path('', include(router.urls)),  # 👈 ERROR: Incluyendo el router una segunda vez
     path('test/', test_connection, name='test_connection'),
 ]

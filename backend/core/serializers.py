@@ -1,15 +1,12 @@
 from rest_framework import serializers
-from .models import User, Role, Manufacturer, Size, Status, ComponentType, Model, Component, Rig, RiggingType, Rigging
+from .models import User, Manufacturer, Size, Status, ComponentType, Model, Component, Rig, RiggingType, Rigging
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ["id", "username", "email"]
 
-class RoleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Role
-        fields = '__all__'
+
 
 class ManufacturerSerializer(serializers.ModelSerializer):
     class Meta:

@@ -47,6 +47,8 @@ INSTALLED_APPS = [
 
 ]
 
+AUTH_USER_MODEL = "core.User"
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -141,10 +143,7 @@ REST_FRAMEWORK = {
     )
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5174",
-    "http://172.0.0.1:5174",  # React con Vite
-]
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),

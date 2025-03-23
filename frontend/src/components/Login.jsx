@@ -30,42 +30,48 @@ const Login = () => {
     }, []);
 
     const handleLogin = async () => {
-    try {
-        const response = await axios.post("http://localhost:8000/api/auth/login/", { username, password });
+        try {
+            console.log("🔐 Enviando login con:", {username, password});
+            const response = await axios.post("http://localhost:8000/api/auth/login/", {username, password});
 
-        console.log("Respuesta de la API:", response.data); // 🔹 Ver qué devuelve la API
+            console.log("Respuesta de la API:", response.data); // 🔹 Ver qué devuelve la API
 
-        const { group, access, refresh, user } = response.data;
+            const {group, access, refresh, user} = response.data;
 
-        if (!user) {
-            throw new Error("La respuesta de la API no contiene datos de usuario");
+            if (!user) {
+                throw new Error("La respuesta de la API no contiene datos de usuario");
+            }
+
+            sessionStorage.setItem("role", group);
+            sessionStorage.setItem("accessToken", access);
+            sessionStorage.setItem("refreshToken", refresh);
+            sessionStorage.setItem("username", user.username || "Usuario");
+            sessionStorage.setItem("email", user.email || "user@example.com");
+            sessionStorage.setItem("userImage", user.image || "https://via.placeholder.com/40");
+
+            switch (group) {
+                case "admin":
+                    navigate("/admin");
+                    break;
+                case "rigger":
+                    navigate("/rigger");
+                    break;
+                case "user":
+                    navigate("/user");
+                    break;
+                default:
+                    setError("Rol desconocido");
+            }
+        } catch (err) {
+            if (err.response) {
+                console.error("❌ Error en login:", err.response.status, err.response.data);
+                setError(err.response.data?.error || "Error al iniciar sesión.");
+            } else {
+                console.error("❌ Error desconocido:", err.message);
+                setError("Error desconocido. Verifica la conexión al servidor.");
+            }
         }
-
-        sessionStorage.setItem("role", group);
-        sessionStorage.setItem("accessToken", access);
-        sessionStorage.setItem("refreshToken", refresh);
-        sessionStorage.setItem("username", user.username || "Usuario");
-        sessionStorage.setItem("email", user.email || "user@example.com");
-        sessionStorage.setItem("userImage", user.image || "https://via.placeholder.com/40");
-
-        switch (group) {
-            case "admin":
-                navigate("/admin");
-                break;
-            case "rigger":
-                navigate("/rigger");
-                break;
-            case "user":
-                navigate("/user");
-                break;
-            default:
-                setError("Rol desconocido");
-        }
-    } catch (err) {
-        console.error("Error al iniciar sesión:", err);
-        setError(err.message || "Error al iniciar sesión. Verifica tus credenciales.");
-    }
-};
+    };
 
     return (
         <Paper elevation={10} sx={{padding: 4, width: 350, textAlign: "center", borderRadius: 3}}>
