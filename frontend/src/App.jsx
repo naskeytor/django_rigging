@@ -11,6 +11,9 @@ import DashboardLayout from "./components/DashboardLayout";
 import {ADMIN_NAVIGATION} from "./config/navigation.jsx";
 import {IdleTimerProvider} from "react-idle-timer";
 import {useNavigate} from "react-router-dom";
+import Register from "./components/Register";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 
 // 🔹 Hook separado para usar useNavigate dentro de un componente válido
 function IdleHandler() {
@@ -26,6 +29,9 @@ function IdleHandler() {
         <IdleTimerProvider timeout={1000 * 60 * 15} onIdle={handleOnIdle}>
             <Routes>
                 <Route path="/" element={<Login/>}/>
+                <Route path="/register" element={<Register/>}/>
+                <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                <Route path="/reset-password/:token" element={<ResetPassword/>}/>
                 <Route path="/admin" element={<Admin navigation={ADMIN_NAVIGATION}/>}/>
                 <Route path="/rigger" element={<DashboardLayout><Rigger/></DashboardLayout>}/>
                 <Route path="/user" element={<DashboardLayout><User/></DashboardLayout>}/>
