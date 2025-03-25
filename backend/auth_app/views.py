@@ -1,13 +1,17 @@
 import json
 import secrets
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User, Group
+# from django.contrib.auth.models import User, Group
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+
+User = get_user_model()
 
 
 def auth_root_view(request):
@@ -26,31 +30,39 @@ def auth_root_view(request):
 
 @csrf_exempt
 def register_view(request):
-    """
-    Registra un nuevo usuario y lo asigna al grupo 'user' por defecto.
-    """
     if request.method == "POST":
-        data = json.loads(request.body)
-        username = data.get("username")
-        email = data.get("email")
-        password = data.get("password")
+        try:
+            data = json.loads(request.body)
+            username = data.get("username")
+            email = data.get("email")
+            password = data.get("password")
 
-        if User.objects.filter(username=username).exists():
-            return JsonResponse({"error": "El nombre de usuario ya está en uso"}, status=400)
+            if not username or not email or not password:
+                return JsonResponse({"error": "Todos los campos son obligatorios"}, status=400)
 
-        if User.objects.filter(email=email).exists():
-            return JsonResponse({"error": "El email ya está registrado"}, status=400)
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({"error": "El nombre de usuario ya está en uso"}, status=400)
 
-        user = User.objects.create_user(username=username, email=email, password=password)
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({"error": "El email ya está registrado"}, status=400)
 
-        # Agregar usuario al grupo "user" por defecto
-        user_group, _ = Group.objects.get_or_create(name="user")
-        user.groups.add(user_group)
+            user = User.objects.create_user(username=username, email=email, password=password)
 
-        return JsonResponse({
-            "message": "Registro exitoso",
-            "user": {"id": user.id, "username": user.username, "email": user.email, "group": "user"},
-        }, status=201)
+            group, _ = Group.objects.get_or_create(name="user")
+            user.groups.add(group)
+
+            return JsonResponse({
+                "message": "Registro exitoso",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "group": "user"
+                }
+            }, status=201)
+
+        except Exception as e:
+            return JsonResponse({"error": f"Error en el servidor: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
@@ -90,7 +102,6 @@ def login_view(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
-
 def logout_view(request):
     """
     Cierra la sesión del usuario.
@@ -101,62 +112,64 @@ def logout_view(request):
 
 @csrf_exempt
 def forgot_password_view(request):
-    """
-    Envío de un correo con un enlace para restablecer la contraseña.
-    """
     if request.method == "POST":
-        data = json.loads(request.body)
-        email = data.get("email")
-
-        if not email:
-            return JsonResponse({"error": "El email es obligatorio"}, status=400)
-
-        user = User.objects.filter(email=email).first()
-        if not user:
-            return JsonResponse({"error": "No se encontró un usuario con este email"}, status=404)
-
-        # Generar token de recuperación
-        reset_token = secrets.token_hex(16)
-        user.profile.reset_token = reset_token  # Guardamos el token en el perfil del usuario
-        user.profile.save()
-
-        # Crear la URL de restablecimiento
-        reset_url = f"http://127.0.0.1:5174/reset-password/{reset_token}"
-
-        # Enviar el correo con el link de restablecimiento
-        subject = "Restablecimiento de Contraseña"
-        message = f"Haz clic en el siguiente enlace para restablecer tu contraseña:\n{reset_url}"
-        email_from = settings.DEFAULT_FROM_EMAIL
-        recipient_list = [email]
-
         try:
-            send_mail(subject, message, email_from, recipient_list)
-            return JsonResponse({"message": "Correo de restablecimiento enviado"}, status=200)
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse({"error": "Email es obligatorio"}, status=400)
+
+            user = User.objects.filter(email=email).first()
+            if not user:
+                return JsonResponse({"error": "Usuario no encontrado"}, status=404)
+
+            # 🔑 Generar token único
+            reset_token = secrets.token_hex(16)
+            user.reset_token = reset_token
+            user.save()
+
+            # 📨 Enviar correo con enlace de recuperación
+            frontend_url = "http://127.0.0.1:5174"  # Actualiza si es necesario
+            reset_url = f"{frontend_url}/reset-password/{reset_token}"
+
+            send_mail(
+                subject="Restablecimiento de contraseña",
+                message=f"Haz clic aquí para restablecer tu contraseña: {reset_url}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+            return JsonResponse({"message": "Enlace de recuperación enviado si el email existe."})
+
         except Exception as e:
-            return JsonResponse({"error": "Error al enviar el correo", "details": str(e)}, status=500)
+            return JsonResponse({"error": f"Error en el servidor: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
 @csrf_exempt
 def reset_password_view(request, token):
-    """
-    Restablece la contraseña del usuario si el token es válido.
-    """
     if request.method == "POST":
-        data = json.loads(request.body)
-        new_password = data.get("password")
+        try:
+            data = json.loads(request.body)
+            password = data.get("password")
 
-        user = User.objects.filter(profile__reset_token=token).first()
-        if not user:
-            return JsonResponse({"error": "Token inválido o expirado"}, status=400)
+            if not password:
+                return JsonResponse({"error": "Contraseña requerida"}, status=400)
 
-        # Cambiar la contraseña y limpiar el token
-        user.set_password(new_password)
-        user.profile.reset_token = None
-        user.profile.save()
-        user.save()
+            user = User.objects.filter(reset_token=token).first()
+            if not user:
+                return JsonResponse({"error": "Token inválido o expirado"}, status=400)
 
-        return JsonResponse({"message": "Contraseña actualizada correctamente"}, status=200)
+            user.set_password(password)
+            user.reset_token = None  # ⚠️ Eliminar el token una vez usado
+            user.save()
+
+            return JsonResponse({"message": "Contraseña actualizada correctamente"})
+
+        except Exception as e:
+            return JsonResponse({"error": f"Error en el servidor: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
