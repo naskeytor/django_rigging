@@ -1,5 +1,5 @@
-// src/components/ManufacturersContent.jsx
 import React, {useEffect, useState} from "react";
+import axios from "axios";
 import CustomTable from "./Table";
 import {MANUFACTURER_TABLE_COLUMNS} from "../config/manufacturerTableConfig";
 
@@ -7,19 +7,92 @@ const ManufacturersContent = () => {
     const [manufacturerRows, setManufacturerRows] = useState([]);
 
     useEffect(() => {
-        // Simulación: tabla vacía para comenzar
-        console.log("📦 ManufacturersContent montado");
-        setManufacturerRows([]);
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            console.error("❌ No hay token, la solicitud será rechazada.");
+            return;
+        }
+
+        axios
+            .get("http://localhost:8000/api/manufacturers/", {
+                headers: {Authorization: `Bearer ${token}`},
+            })
+            .then((response) => {
+                console.log("📦 Datos de manufacturers:", response.data);
+
+                const formatted = response.data.map((m) => ({
+                    id: m.id,
+                    manufacturer: m.manufacturer,
+                }));
+
+                setManufacturerRows(formatted);
+            })
+            .catch((error) => {
+                console.error("❌ Error al obtener fabricantes:", error);
+            });
     }, []);
 
     const handleSave = async (data, mode) => {
-        console.log("💾 Guardar manufacturer:", data, mode);
-        // Puedes implementar lógica real luego
+        const token = sessionStorage.getItem("accessToken");
+
+        try {
+            if (mode === "edit") {
+                await axios.put(
+                    `http://localhost:8000/api/manufacturers/${data.id}/`,
+                    {manufacturer: data.manufacturer},
+                    {
+                        headers: {Authorization: `Bearer ${token}`},
+                    }
+                );
+                console.log("✏️ Fabricante actualizado");
+            } else {
+                await axios.post(
+                    "http://localhost:8000/api/manufacturers/",
+                    {manufacturer: data.manufacturer},
+                    {
+                        headers: {Authorization: `Bearer ${token}`},
+                    }
+                );
+                console.log("🆕 Fabricante creado");
+            }
+
+            // Actualiza la tabla después de guardar
+            const response = await axios.get("http://localhost:8000/api/manufacturers/", {
+                headers: {Authorization: `Bearer ${token}`},
+            });
+
+            const updated = response.data.map((m) => ({
+                id: m.id,
+                manufacturer: m.manufacturer,
+            }));
+
+            setManufacturerRows(updated);
+        } catch (err) {
+            console.error("❌ Error al guardar fabricante:", err);
+        }
     };
 
     const handleDelete = async (manufacturer) => {
-        console.log("🗑️ Eliminar manufacturer:", manufacturer);
-        // Puedes implementar lógica real luego
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!window.confirm(`¿Eliminar fabricante "${manufacturer.manufacturer}"?`)) return;
+
+        try {
+            await axios.delete(`http://localhost:8000/api/manufacturers/${manufacturer.id}/`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            setManufacturerRows((prev) =>
+                prev.filter((m) => m.id !== manufacturer.id)
+            );
+
+            console.log("🗑️ Fabricante eliminado");
+        } catch (err) {
+            console.error("❌ Error al eliminar fabricante:", err);
+        }
     };
 
     return (
