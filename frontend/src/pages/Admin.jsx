@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DashboardLayoutAccount from "../components/DashboardLayout";
 import { ADMIN_NAVIGATION } from "../config/navigation";
 import UsersContent from "../components/UsersContent";
+import ManufacturersContent from "../components/ManufacturersContent";
 
 const Admin = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -9,14 +10,18 @@ const Admin = () => {
     console.log("🔍 Active Tab en Admin.jsx:", activeTab);
 
     return (
-        <DashboardLayoutAccount navigation={ADMIN_NAVIGATION} onTabChange={setActiveTab}>
+        <DashboardLayoutAccount
+            navigation={ADMIN_NAVIGATION}
+            onTabChange={setActiveTab}
+        >
             {activeTab === "users" ? (
-                <>
-
-                    <UsersContent />
-                </>
+                <UsersContent />
+            ) : activeTab === "settings/manufacturers" ? (
+                <ManufacturersContent />
             ) : (
-                <h2 style={{ color: "white" }}>Bienvenido al Panel de Administración</h2>
+                <h2 style={{ color: "white" }}>
+                    Bienvenido al Panel de Administración
+                </h2>
             )}
         </DashboardLayoutAccount>
     );
