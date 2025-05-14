@@ -29,6 +29,8 @@ class ComponentTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ModelSerializer(serializers.ModelSerializer):
+    manufacturer_name = serializers.CharField(source='manufacturer.manufacturer', read_only=True)
+
     class Meta:
         model = Model
         fields = '__all__'

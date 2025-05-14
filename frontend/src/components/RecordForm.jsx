@@ -1,4 +1,3 @@
-// src/components/RecordForm.jsx
 import React, {useState, useEffect} from "react";
 import {
     Paper,
@@ -7,16 +6,70 @@ import {
     TextField,
     Button,
     Stack,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from "@mui/material";
+import axios from "axios";
 
-const RecordForm = ({mode = "view", data = {}, onSave, onCancel, onEdit, onDelete, entityType}) => {
+const RecordForm = ({
+                        mode = "view",
+                        data = {},
+                        onSave,
+                        onCancel,
+                        onEdit,
+                        onDelete,
+                        entityType,
+                    }) => {
     const [formData, setFormData] = useState({});
+    const [manufacturerOptions, setManufacturerOptions] = useState([]);
 
     const isViewMode = mode === "view";
 
+    // 🔹 Cargar fabricantes solo si es tipo "model"
     useEffect(() => {
-        setFormData(data || {});
-    }, [data]);
+        if (entityType === "model") {
+            const token = sessionStorage.getItem("accessToken");
+
+            if (!token) {
+                console.error("❌ No hay token para cargar manufacturers");
+                return;
+            }
+
+            axios
+                .get("http://localhost:8000/api/manufacturers/", {
+                    headers: {Authorization: `Bearer ${token}`},
+                })
+                .then((res) => {
+                    setManufacturerOptions(res.data);
+                })
+                .catch((err) => {
+                    console.error("❌ Error al cargar fabricantes:", err);
+                });
+        }
+    }, [entityType]);
+
+    // 🔁 Convertir fabricante string a ID cuando cargan manufacturerOptions
+    useEffect(() => {
+        if (!data) return;
+        let patchedData = {...data};
+
+        if (
+            entityType === "model" &&
+            typeof patchedData.manufacturer === "string" &&
+            manufacturerOptions.length > 0
+        ) {
+            const match = manufacturerOptions.find(
+                (m) => m.manufacturer === patchedData.manufacturer
+            );
+            if (match) {
+                patchedData.manufacturer = match.id;
+            }
+        }
+
+        setFormData(patchedData);
+    }, [data, entityType, manufacturerOptions]);
 
     const handleChange = (field) => (e) => {
         setFormData((prev) => ({
@@ -27,7 +80,7 @@ const RecordForm = ({mode = "view", data = {}, onSave, onCancel, onEdit, onDelet
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (onSave) onSave(formData);
+        if (onSave) onSave(formData, mode);
     };
 
     const renderFields = () => {
@@ -75,6 +128,48 @@ const RecordForm = ({mode = "view", data = {}, onSave, onCancel, onEdit, onDelet
                         disabled={isViewMode}
                     />
                 );
+
+            case "model":
+                // 🔒 Evitar render hasta que haya opciones para evitar error de MUI
+                if (manufacturerOptions.length === 0 && !isViewMode) {
+                    return <Typography>Cargando fabricantes...</Typography>;
+                }
+
+                return (
+                    <>
+                        <TextField
+                            label="Model Name"
+                            value={formData.name || ""}
+                            onChange={handleChange("name")}
+                            fullWidth
+                            margin="normal"
+                            disabled={isViewMode}
+                        />
+
+                        <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                            <InputLabel id="manufacturer-label">Manufacturer</InputLabel>
+                            <Select
+                                labelId="manufacturer-label"
+                                label="Manufacturer"
+                                value={
+                                    manufacturerOptions.find(
+                                        (m) => m.id === formData.manufacturer
+                                    )
+                                        ? formData.manufacturer
+                                        : ""
+                                }
+                                onChange={handleChange("manufacturer")}
+                            >
+                                {manufacturerOptions.map((m) => (
+                                    <MenuItem key={m.id} value={m.id}>
+                                        {m.manufacturer}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </>
+                );
+
             case "size":
                 return (
                     <TextField
@@ -86,15 +181,20 @@ const RecordForm = ({mode = "view", data = {}, onSave, onCancel, onEdit, onDelet
                         disabled={isViewMode}
                     />
                 );
+
             default:
-                return <Typography color="error">Modelo no soportado</Typography>;
+                return <Typography color="error">❌ Modelo no soportado</Typography>;
         }
     };
 
     return (
         <Paper elevation={4} sx={{p: 4, borderRadius: 3, maxWidth: 600, mx: "auto"}}>
             <Typography variant="h6" gutterBottom>
-                {mode === "create" ? "Crear Registro" : mode === "edit" ? "Editar Registro" : "Detalle del Registro"}
+                {mode === "create"
+                    ? "Crear Registro"
+                    : mode === "edit"
+                        ? "Editar Registro"
+                        : "Detalle del Registro"}
             </Typography>
 
             <Box component="form" onSubmit={handleSubmit}>
