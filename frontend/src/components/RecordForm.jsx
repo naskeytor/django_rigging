@@ -182,6 +182,18 @@ const RecordForm = ({
                     />
                 );
 
+            case "status":
+                return (
+                    <TextField
+                        label="Status"
+                        value={formData.status || ""}
+                        onChange={handleChange("status")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+                );
+
             default:
                 return <Typography color="error">❌ Modelo no soportado</Typography>;
         }
