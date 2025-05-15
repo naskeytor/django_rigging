@@ -21,6 +21,7 @@ const RecordForm = ({
                         onEdit,
                         onDelete,
                         entityType,
+                        extraOptions = {},
                     }) => {
     const [formData, setFormData] = useState({});
     const [manufacturerOptions, setManufacturerOptions] = useState([]);
@@ -204,6 +205,115 @@ const RecordForm = ({
                         margin="normal"
                         disabled={isViewMode}
                     />
+                );
+
+            case "component":
+                return (
+                    <>
+                        <TextField
+                            label="Serial Number"
+                            value={formData.serial_number || ""}
+                            onChange={handleChange("serial_number")}
+                            fullWidth
+                            margin="normal"
+                            disabled={isViewMode}
+                        />
+
+                        <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                            <InputLabel id="component-type-label">Component Type</InputLabel>
+                            <Select
+                                labelId="component-type-label"
+                                value={formData.component_type || ""}
+                                onChange={handleChange("component_type")}
+                                label="Component Type"
+                            >
+                                {extraOptions?.componentTypes?.map((opt) => (
+                                    <MenuItem key={opt.id} value={opt.id}>
+                                        {opt.component_type}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                            <InputLabel id="model-label">Model</InputLabel>
+                            <Select
+                                labelId="model-label"
+                                value={formData.model || ""}
+                                onChange={handleChange("model")}
+                                label="Model"
+                            >
+                                {extraOptions?.models?.map((opt) => (
+                                    <MenuItem key={opt.id} value={opt.id}>
+                                        {opt.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                            <InputLabel id="size-label">Size</InputLabel>
+                            <Select
+                                labelId="size-label"
+                                value={formData.size || ""}
+                                onChange={handleChange("size")}
+                                label="Size"
+                            >
+                                {extraOptions?.sizes?.map((opt) => (
+                                    <MenuItem key={opt.id} value={opt.id}>
+                                        {opt.size}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                            <InputLabel id="status-label">Status</InputLabel>
+                            <Select
+                                labelId="status-label"
+                                value={formData.status || ""}
+                                onChange={handleChange("status")}
+                                label="Status"
+                            >
+                                {extraOptions?.statuses?.map((opt) => (
+                                    <MenuItem key={opt.id} value={opt.id}>
+                                        {opt.status}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            label="Date of Manufacture"
+                            type="date"
+                            value={formData.dom || ""}
+                            onChange={handleChange("dom")}
+                            fullWidth
+                            margin="normal"
+                            InputLabelProps={{shrink: true}}
+                            disabled={isViewMode}
+                        />
+
+                        <TextField
+                            label="Jumps"
+                            type="number"
+                            value={formData.jumps || 0}
+                            onChange={handleChange("jumps")}
+                            fullWidth
+                            margin="normal"
+                            disabled={isViewMode}
+                        />
+
+                        <TextField
+                            label="AAD Jumps on Mount"
+                            type="number"
+                            value={formData.aad_jumps_on_mount || 0}
+                            onChange={handleChange("aad_jumps_on_mount")}
+                            fullWidth
+                            margin="normal"
+                            disabled={isViewMode}
+                        />
+                    </>
                 );
 
             default:
