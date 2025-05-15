@@ -194,6 +194,18 @@ const RecordForm = ({
                     />
                 );
 
+            case "component_type":
+                return (
+                    <TextField
+                        label="Component Type"
+                        value={formData.component_type || ""}
+                        onChange={handleChange("component_type")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+                );
+
             default:
                 return <Typography color="error">❌ Modelo no soportado</Typography>;
         }

@@ -43,6 +43,12 @@ export const ADMIN_NAVIGATION = [
                 title: "Statuses",
                 icon: <CheckCircleIcon/>,
             },
+            {
+                segment: "component-types",
+                title: "Component Types",
+                icon: <CheckCircleIcon/>, // o cualquier otro icono de MUI
+            }
+
         ],
     },
 ];
