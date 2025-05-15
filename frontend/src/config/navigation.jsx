@@ -19,6 +19,11 @@ export const ADMIN_NAVIGATION = [
         icon: <PeopleIcon/>,
     },
     {
+        segment: "components",
+        title: "Components",
+        icon: <InventoryIcon/>,
+    },
+    {
         segment: "settings",
         title: "Settings",
         icon: <SettingsIcon/>,

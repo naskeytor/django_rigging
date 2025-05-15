@@ -7,6 +7,7 @@ import ModelsContent from "../components/ModelsContent.jsx";
 import SizesContent from "../components/SizesContent";
 import StatusesContent from "../components/StatusesContent.jsx";
 import ComponentTypesContent from "../components/ComponentTypesContent";
+import ComponentsContent from "../components/ComponentsContent";
 
 const Admin = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -20,6 +21,8 @@ const Admin = () => {
         >
             {activeTab === "users" ? (
                 <UsersContent/>
+            ) : activeTab === "components" ? (
+                <ComponentsContent />
             ) : activeTab === "settings/manufacturers" ? (
                 <ManufacturersContent/>
             ) : activeTab === "settings/models" ? (

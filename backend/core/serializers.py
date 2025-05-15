@@ -36,6 +36,11 @@ class ModelSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ComponentSerializer(serializers.ModelSerializer):
+    component_type_name = serializers.CharField(source='component_type.component_type', read_only=True)
+    model_name = serializers.CharField(source='model.name', read_only=True)
+    size_name = serializers.CharField(source='size.size', read_only=True)
+    status_name = serializers.CharField(source='status.status', read_only=True)
+
     class Meta:
         model = Component
         fields = '__all__'

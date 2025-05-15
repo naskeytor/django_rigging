@@ -1,3 +1,4 @@
+// src/components/Table.jsx
 import * as React from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import {
@@ -13,7 +14,7 @@ import {
 import RecordForm from "./RecordForm";
 import CloseIcon from "@mui/icons-material/Close";
 
-const CustomTable = ({title, columns, rows, entityType, onSave, onDelete}) => {
+const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraOptions}) => {
     const [selectedRow, setSelectedRow] = React.useState(null);
     const [mode, setMode] = React.useState("view");
 
@@ -27,7 +28,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete}) => {
 
     const handleInternalSave = async (formData) => {
         if (onSave) {
-            await onSave(formData, mode); // 👈 pasamos también el modo
+            await onSave(formData, mode);
         }
         setSelectedRow(null);
     };
@@ -45,14 +46,12 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete}) => {
                 {title}
             </Typography>
 
-
             <Box sx={{height: 400, width: "100%"}}>
-
                 <Button
                     variant="contained"
                     sx={{mb: 2}}
                     onClick={() => {
-                        setSelectedRow({});  // datos vacíos para crear
+                        setSelectedRow({});
                         setMode("create");
                     }}
                 >
@@ -63,9 +62,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete}) => {
                     rows={rows}
                     columns={columns}
                     pageSizeOptions={[5, 10, 20, 100]}
-                    initialState={{
-                        pagination: {paginationModel: {pageSize: 10}},
-                    }}
+                    initialState={{pagination: {paginationModel: {pageSize: 10}}}}
                     disableRowSelectionOnClick
                     onRowClick={handleRowClick}
                     autoHeight
@@ -97,12 +94,12 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete}) => {
                         onEdit={handleEdit}
                         onDelete={handleInternalDelete}
                         entityType={entityType}
+                        extraOptions={extraOptions} // ✅ Paso extraOptions a RecordForm
                     />
                 </DialogContent>
             </Dialog>
         </Paper>
     );
 };
-
 
 export default CustomTable;
