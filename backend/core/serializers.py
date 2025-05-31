@@ -46,6 +46,12 @@ class ComponentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RigSerializer(serializers.ModelSerializer):
+    components = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Component.objects.all(),
+        required=False  # 🔹 Esto hace que no sea obligatorio al crear o editar
+    )
+
     class Meta:
         model = Rig
         fields = '__all__'

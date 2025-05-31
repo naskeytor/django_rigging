@@ -8,6 +8,7 @@ import SizesContent from "../components/SizesContent";
 import StatusesContent from "../components/StatusesContent.jsx";
 import ComponentTypesContent from "../components/ComponentTypesContent";
 import ComponentsContent from "../components/ComponentsContent";
+import RigsContent from "../components/RigsContent";
 
 const Admin = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -21,8 +22,10 @@ const Admin = () => {
         >
             {activeTab === "users" ? (
                 <UsersContent/>
+            ) : activeTab === "rigs" ? (
+                <RigsContent/>                 // ← Asegúrate de importar este componente
             ) : activeTab === "components" ? (
-                <ComponentsContent />
+                <ComponentsContent/>
             ) : activeTab === "settings/manufacturers" ? (
                 <ManufacturersContent/>
             ) : activeTab === "settings/models" ? (
@@ -34,9 +37,7 @@ const Admin = () => {
             ) : activeTab === "settings/component-types" ? (
                 <ComponentTypesContent/>
             ) : (
-                <h2 style={{color: "white"}}>
-                    Bienvenido al Panel de Administración
-                </h2>
+                <h2 style={{color: "white"}}>Bienvenido al Panel de Administración</h2>
             )}
         </DashboardLayoutAccount>
     );

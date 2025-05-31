@@ -207,6 +207,32 @@ const RecordForm = ({
                     />
                 );
 
+            case "rig":
+                return (
+                    <>
+                        <TextField
+                            label="Rig Number"
+                            value={formData.rig_number || ""}
+                            onChange={handleChange("rig_number")}
+                            fullWidth
+                            margin="normal"
+                        />
+                        <TextField
+                            label="Current AAD Jumps"
+                            type="number"
+                            value={formData.current_aad_jumps ?? ""}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    current_aad_jumps: e.target.value,
+                                }))
+                            }
+                            fullWidth
+                            margin="normal"
+                        />
+                    </>
+                );
+
             case "component":
                 return (
                     <>
