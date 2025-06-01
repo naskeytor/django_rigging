@@ -1,105 +1,115 @@
-// src/components/RigsContent.jsx
 import React, {useEffect, useState} from "react";
 import axios from "axios";
-import CustomTable from "./Table";
-import {RIG_TABLE_COLUMNS} from "../config/rigTableConfig";
+import CustomTable from "../components/Table";
 
 const RigsContent = () => {
     const [rows, setRows] = useState([]);
-
-    const fetchRigs = async () => {
-        const token = sessionStorage.getItem("accessToken");
-
-        try {
-            const res = await axios.get("http://localhost:8000/api/rigs/", {
-                headers: {Authorization: `Bearer ${token}`},
-            });
-
-            const formatted = res.data.map((r) => {
-                const canopy = r.components.find(c => c.component_type_name === "Canopy")?.model_name || "";
-                const container = r.components.find(c => c.component_type_name === "Container")?.model_name || "";
-                const reserve = r.components.find(c => c.component_type_name === "Reserve")?.model_name || "";
-                const aad = r.components.find(c => c.component_type_name === "AAD")?.model_name || "";
-
-                return {
-                    id: r.id,
-                    rig_number: r.rig_number,
-                    current_aad_jumps: r.current_aad_jumps,
-                    canopy,
-                    container,
-                    reserve,
-                    aad,
-                };
-            });
-
-            setRows(formatted);
-        } catch (err) {
-            console.error("❌ Error al obtener rigs:", err);
-        }
-    };
+    const [components, setComponents] = useState([]);
 
     useEffect(() => {
-        fetchRigs();
+        const token = sessionStorage.getItem("accessToken");
+
+        axios
+            .get("http://localhost:8000/api/rigs/", {
+                headers: {Authorization: `Bearer ${token}`},
+            })
+            .then((res) => setRows(res.data))
+            .catch((err) => console.error("❌ Error al cargar rigs:", err));
+
+        axios
+            .get("http://localhost:8000/api/components/", {
+                headers: {Authorization: `Bearer ${token}`},
+            })
+            .then((res) => setComponents(res.data))
+            .catch((err) => console.error("❌ Error al cargar componentes:", err));
     }, []);
 
     const handleSave = async (data, mode) => {
         const token = sessionStorage.getItem("accessToken");
+
         const payload = {
             rig_number: data.rig_number,
-            current_aad_jumps: data.current_aad_jumps === ""
-                ? 0
-                : parseInt(data.current_aad_jumps),
+            current_aad_jumps: data.current_aad_jumps,
+            components: [
+                data.canopy,
+                data.container,
+                data.reserve,
+                data.aad,
+            ].filter(Boolean),
         };
 
-        console.log("🧪 Payload a enviar:", payload);
+        console.log("📦 Payload enviado:", payload);
 
-        try {
-            if (mode === "edit") {
-                await axios.put(`http://localhost:8000/api/rigs/${data.id}/`, payload, {
-                    headers: {Authorization: `Bearer ${token}`},
-                });
-            } else {
-                await axios.post("http://localhost:8000/api/rigs/", payload, {
-                    headers: {Authorization: `Bearer ${token}`},
-                });
-            }
-            await fetchRigs();
-        } catch (err) {
-            console.error("❌ Error al guardar rig:", err);
-            if (err.response?.data) {
-                console.error("🔍 Detalles del error:", err.response.data);
-            }
-        }
-    };
-
-    const handleDelete = async (record) => {
-        const token = sessionStorage.getItem("accessToken");
-
-        if (!window.confirm(`¿Eliminar rig "${record.rig_number}"?`)) return;
-
-        try {
-            await axios.delete(`http://localhost:8000/api/rigs/${record.id}/`, {
+        if (mode === "create") {
+            await axios.post("http://localhost:8000/api/rigs/", payload, {
                 headers: {Authorization: `Bearer ${token}`},
             });
-
-            setRows((prev) => prev.filter((r) => r.id !== record.id));
-        } catch (err) {
-            console.error("❌ Error al eliminar rig:", err);
+        } else {
+            await axios.put(`http://localhost:8000/api/rigs/${data.id}/`, payload, {
+                headers: {Authorization: `Bearer ${token}`},
+            });
         }
+
+        // 🔁 Refrescar tabla después de guardar
+        const res = await axios.get("http://localhost:8000/api/rigs/", {
+            headers: {Authorization: `Bearer ${token}`},
+        });
+        setRows(res.data);
     };
 
+    const handleDelete = async (row) => {
+        const token = sessionStorage.getItem("accessToken");
+        await axios.delete(`http://localhost:8000/api/rigs/${row.id}/`, {
+            headers: {Authorization: `Bearer ${token}`},
+        });
+
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+    };
+
+    const columns = [
+        {field: "id", headerName: "ID", width: 70},
+        {field: "rig_number", headerName: "Rig Number", width: 150},
+        {field: "current_aad_jumps", headerName: "AAD Jumps", width: 150},
+        {
+            field: "canopy",
+            headerName: "Canopy",
+            width: 150,
+            valueGetter: (params) =>
+                params?.row?.components?.find(c => c.component_type_name === "Canopy")?.serial_number || "",
+        },
+        {
+            field: "container",
+            headerName: "Container",
+            width: 150,
+            valueGetter: (params) =>
+                params?.row?.components?.find(c => c.component_type_name === "Container")?.serial_number || "",
+        },
+        {
+            field: "reserve",
+            headerName: "Reserve",
+            width: 150,
+            valueGetter: (params) =>
+                params?.row?.components?.find(c => c.component_type_name === "Reserve")?.serial_number || "",
+        },
+        {
+            field: "aad",
+            headerName: "AAD",
+            width: 150,
+            valueGetter: (params) =>
+                params?.row?.components?.find(c => c.component_type_name === "AAD")?.serial_number || "",
+        },
+    ];
+
     return (
-        <div style={{color: "white", padding: "20px"}}>
-            <h2>Lista de Rigs</h2>
-            <CustomTable
-                title="Rigs"
-                columns={RIG_TABLE_COLUMNS}
-                rows={rows}
-                entityType="rig"
-                onSave={handleSave}
-                onDelete={handleDelete}
-            />
-        </div>
+        <CustomTable
+            title="Rigs"
+            entityType="rig"
+            columns={columns}
+            rows={rows}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            extraOptions={{components}}
+        />
     );
 };
 

@@ -208,6 +208,16 @@ const RecordForm = ({
                 );
 
             case "rig":
+                const componentByType = (type) =>
+                    extraOptions?.components?.filter((c) => c.component_type_name === type) || [];
+
+                const componentFields = [
+                    {key: "canopy", label: "Canopy"},
+                    {key: "container", label: "Container"},
+                    {key: "reserve", label: "Reserve"},
+                    {key: "aad", label: "AAD"},  // ⚠️ coincidir exactamente con backend
+                ];
+
                 return (
                     <>
                         <TextField
@@ -216,7 +226,9 @@ const RecordForm = ({
                             onChange={handleChange("rig_number")}
                             fullWidth
                             margin="normal"
+                            disabled={isViewMode}
                         />
+
                         <TextField
                             label="Current AAD Jumps"
                             type="number"
@@ -229,9 +241,34 @@ const RecordForm = ({
                             }
                             fullWidth
                             margin="normal"
+                            disabled={isViewMode}
                         />
+
+                        {componentFields.map(({key, label}) => (
+                            <FormControl
+                                key={key}
+                                fullWidth
+                                margin="normal"
+                                disabled={isViewMode}
+                            >
+                                <InputLabel id={`${key}-label`}>{label}</InputLabel>
+                                <Select
+                                    labelId={`${key}-label`}
+                                    value={formData[key] || ""}
+                                    onChange={handleChange(key)}
+                                    label={label}
+                                >
+                                    {componentByType(label).map((comp) => (
+                                        <MenuItem key={comp.id} value={comp.id}>
+                                            {comp.serial_number}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        ))}
                     </>
                 );
+
 
             case "component":
                 return (
