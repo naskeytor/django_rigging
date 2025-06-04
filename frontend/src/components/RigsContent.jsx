@@ -121,26 +121,33 @@ const RigsContent = () => {
             const reserve = getComponent("Reserve");
             const aad = getComponent("AAD");
 
+            const formatLabel = (comp, includeSize = false) => {
+                if (!comp) return "—";
+                const model = comp.model_name || "";
+                const size = includeSize && comp.size_name ? ` - ${comp.size_name}` : "";
+                return `${model}${size}`;
+            };
+
             return {
                 ...rig,
-                canopy_serial: canopy?.serial_number || "—",
+                canopy_label: formatLabel(canopy, true),
                 canopy_id: canopy?.id || null,
 
-                container_serial: container?.serial_number || "—",
+                container_label: formatLabel(container, false),
                 container_id: container?.id || null,
 
-                reserve_serial: reserve?.serial_number || "—",
+                reserve_label: formatLabel(reserve, true),
                 reserve_id: reserve?.id || null,
 
-                aad_serial: aad?.serial_number || "—",
+                aad_label: formatLabel(aad, false),
                 aad_id: aad?.id || null,
             };
         });
     }, [rows]);
 
-    const renderComponentCell = (serialField, idField) => (params) => {
+    const renderComponentCell = (labelField, idField) => (params) => {
         const row = params.row;
-        if (!row[idField]) return row[serialField];
+        if (!row[idField]) return row[labelField];
         return (
             <Button
                 variant="text"
@@ -149,7 +156,7 @@ const RigsContent = () => {
                     handleComponentClick(row[idField]);
                 }}
             >
-                {row[serialField]}
+                {row[labelField]}
             </Button>
         );
     };
@@ -159,28 +166,28 @@ const RigsContent = () => {
         { field: "rig_number", headerName: "Rig Number", width: 150 },
         { field: "current_aad_jumps", headerName: "AAD Jumps", width: 150 },
         {
-            field: "canopy_serial",
+            field: "canopy_label",
             headerName: "Canopy",
-            width: 150,
-            renderCell: renderComponentCell("canopy_serial", "canopy_id"),
+            width: 200,
+            renderCell: renderComponentCell("canopy_label", "canopy_id"),
         },
         {
-            field: "container_serial",
+            field: "container_label",
             headerName: "Container",
-            width: 150,
-            renderCell: renderComponentCell("container_serial", "container_id"),
+            width: 180,
+            renderCell: renderComponentCell("container_label", "container_id"),
         },
         {
-            field: "reserve_serial",
+            field: "reserve_label",
             headerName: "Reserve",
-            width: 150,
-            renderCell: renderComponentCell("reserve_serial", "reserve_id"),
+            width: 200,
+            renderCell: renderComponentCell("reserve_label", "reserve_id"),
         },
         {
-            field: "aad_serial",
+            field: "aad_label",
             headerName: "AAD",
-            width: 150,
-            renderCell: renderComponentCell("aad_serial", "aad_id"),
+            width: 180,
+            renderCell: renderComponentCell("aad_label", "aad_id"),
         },
     ];
 
