@@ -19,6 +19,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
     const [mode, setMode] = React.useState("view");
 
     const handleRowClick = (params) => {
+        console.log("🧪 Fila seleccionada:", params.row);
         setSelectedRow(params.row);
         setMode("view");
     };

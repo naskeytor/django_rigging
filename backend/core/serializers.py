@@ -59,8 +59,19 @@ class ComponentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Component
         fields = [
-            'id', 'serial_number', 'component_type_name',
-            'model_name', 'size_name', 'status_name', 'component_type_name'
+            'id',
+            'serial_number',
+            'component_type',         # ✅ ← Campo real para <Select>
+            'model',
+            'size',
+            'status',
+            'dom',
+            'jumps',
+            'aad_jumps_on_mount',
+            'component_type_name',    # ✅ ← Nombre para mostrar en tabla
+            'model_name',
+            'size_name',
+            'status_name'
         ]
 
 
