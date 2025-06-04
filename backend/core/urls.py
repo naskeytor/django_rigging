@@ -31,8 +31,6 @@ router.register(r'riggings', RiggingViewSet)
 # 🔹 Definir las rutas
 urlpatterns = [
     path('admin/', admin.site.urls),  # Panel de administración de Django
-    path('', include(router.urls)),  # 👈 ERROR: Incluyendo el router sin prefijo
-
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # 👈 Login JWT
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 👈 Refrescar Token
     path('', include(router.urls)),  # 👈 ERROR: Incluyendo el router una segunda vez

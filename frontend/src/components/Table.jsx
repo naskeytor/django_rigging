@@ -19,6 +19,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
     const [mode, setMode] = React.useState("view");
 
     const handleRowClick = (params) => {
+        console.log("🧪 Fila seleccionada:", params.row);
         setSelectedRow(params.row);
         setMode("view");
     };
@@ -40,6 +41,9 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
         setSelectedRow(null);
     };
 
+    console.log("📋 Filas (rows):", rows);
+    console.log("🧱 Columnas (columns):", columns);
+
     return (
         <Paper elevation={3} sx={{padding: 2, bgcolor: "background.default"}}>
             <Typography variant="h6" sx={{mb: 2, color: "white"}}>
@@ -59,6 +63,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
                 </Button>
 
                 <DataGrid
+                    getRowId={(row) => row.id}
                     rows={rows}
                     columns={columns}
                     pageSizeOptions={[5, 10, 20, 100]}
