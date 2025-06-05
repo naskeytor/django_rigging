@@ -38,18 +38,29 @@ const RigsContent = () => {
         const token = sessionStorage.getItem("accessToken");
         const headers = { Authorization: `Bearer ${token}` };
 
+        const fetchComponentsByType = async (type) => {
+            const res = await axios.get(`http://localhost:8000/api/components/available/?type=${type}`, { headers });
+            return res.data;
+        };
+
         const fetchData = async () => {
             try {
                 const [
                     rigsRes,
-                    componentsRes,
+                    canopies,
+                    containers,
+                    reserves,
+                    aads,
                     typesRes,
                     modelsRes,
                     sizesRes,
                     statusesRes,
                 ] = await Promise.all([
                     axios.get("http://localhost:8000/api/rigs/", { headers }),
-                    axios.get("http://localhost:8000/api/components/", { headers }),
+                    fetchComponentsByType("Canopy"),
+                    fetchComponentsByType("Container"),
+                    fetchComponentsByType("Reserve"),
+                    fetchComponentsByType("AAD"),
                     axios.get("http://localhost:8000/api/component_types/", { headers }),
                     axios.get("http://localhost:8000/api/models/", { headers }),
                     axios.get("http://localhost:8000/api/sizes/", { headers }),
@@ -57,7 +68,12 @@ const RigsContent = () => {
                 ]);
 
                 setRows(rigsRes.data);
-                setComponents(componentsRes.data);
+                setComponents([
+                    ...canopies.map((c) => ({ ...c, component_type_name: "Canopy" })),
+                    ...containers.map((c) => ({ ...c, component_type_name: "Container" })),
+                    ...reserves.map((c) => ({ ...c, component_type_name: "Reserve" })),
+                    ...aads.map((c) => ({ ...c, component_type_name: "AAD" })),
+                ]);
                 setOptions({
                     componentTypes: typesRes.data,
                     models: modelsRes.data,
