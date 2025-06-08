@@ -7,6 +7,8 @@ import {
     DialogTitle,
     DialogContent,
     Button,
+    Typography,
+    Box,
 } from "@mui/material";
 
 const RigsContent = () => {
@@ -21,6 +23,7 @@ const RigsContent = () => {
 
     const [selectedComponent, setSelectedComponent] = useState(null);
     const [componentMode, setComponentMode] = useState("view");
+    const [rigInfo, setRigInfo] = useState(null);
 
     const fetchRigs = async () => {
         const token = sessionStorage.getItem("accessToken");
@@ -128,6 +131,17 @@ const RigsContent = () => {
         }
     };
 
+    const handleRigInfoClick = async (rigId) => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = { Authorization: `Bearer ${token}` };
+        try {
+            const res = await axios.get(`http://localhost:8000/api/rigs/${rigId}/`, { headers });
+            setRigInfo(res.data);
+        } catch (err) {
+            console.error("❌ Error al cargar rig:", err);
+        }
+    };
+
     const processedRows = useMemo(() => {
         return rows.map((rig) => {
             const getComponent = (type) => rig.components?.find(c => c.component_type_name === type);
@@ -178,8 +192,23 @@ const RigsContent = () => {
     };
 
     const columns = [
-        { field: "id", headerName: "ID", width: 70 },
-        { field: "rig_number", headerName: "Rig Number", width: 150 },
+        { field: "id", headerName: "ID", width: 70, sortable: false },
+        {
+            field: "rig_number",
+            headerName: "Rig Number",
+            width: 150,
+            renderCell: (params) => (
+                <Button
+                    variant="text"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleRigInfoClick(params.row.id);
+                    }}
+                >
+                    {params.value}
+                </Button>
+            ),
+        },
         { field: "current_aad_jumps", headerName: "AAD Jumps", width: 150 },
         {
             field: "canopy_label",
@@ -217,6 +246,7 @@ const RigsContent = () => {
                 onSave={handleSave}
                 onDelete={handleDelete}
                 extraOptions={{ components }}
+                disableRowClick
             />
 
             <Dialog open={Boolean(selectedComponent)} onClose={() => setSelectedComponent(null)} maxWidth="sm" fullWidth>
@@ -250,6 +280,21 @@ const RigsContent = () => {
                             setSelectedComponent(null);
                         }}
                     />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={Boolean(rigInfo)} onClose={() => setRigInfo(null)} maxWidth="sm" fullWidth>
+                <DialogTitle>Rig Details</DialogTitle>
+                <DialogContent>
+                    {rigInfo && (
+                        <Box px={2} py={1}>
+                            <Typography variant="body1"><strong>Rig Number:</strong> {rigInfo.rig_number}</Typography>
+                            <Typography variant="body1"><strong>Canopy:</strong> {rigInfo.components?.find(c => c.component_type_name === "Canopy")?.model_name || "—"}</Typography>
+                            <Typography variant="body1"><strong>Container:</strong> {rigInfo.components?.find(c => c.component_type_name === "Container")?.model_name || "—"}</Typography>
+                            <Typography variant="body1"><strong>Reserve:</strong> {rigInfo.components?.find(c => c.component_type_name === "Reserve")?.model_name || "—"}</Typography>
+                            <Typography variant="body1"><strong>AAD:</strong> {rigInfo.components?.find(c => c.component_type_name === "AAD")?.model_name || "—"}</Typography>
+                        </Box>
+                    )}
                 </DialogContent>
             </Dialog>
         </>
