@@ -32,7 +32,7 @@ class ModelViewSet(viewsets.ModelViewSet):
     serializer_class = ModelSerializer
 
 class ComponentViewSet(viewsets.ModelViewSet):
-    queryset = Component.objects.all()
+    queryset = Component.objects.prefetch_related("rigs").all()
     serializer_class = ComponentSerializer
 
 class RigViewSet(viewsets.ModelViewSet):

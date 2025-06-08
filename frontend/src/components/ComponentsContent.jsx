@@ -21,10 +21,12 @@ const ComponentsContent = () => {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
+            console.log("🧪 Componentes recibidos del backend:", res.data);
+
             const formatted = res.data.map((c) => ({
                 id: c.id,
                 serial_number: c.serial_number,
-                component_type: c.component_type, // ID real
+                component_type: c.component_type,
                 component_type_name: c.component_type_name,
                 model: c.model,
                 model_name: c.model_name,
@@ -35,7 +37,11 @@ const ComponentsContent = () => {
                 dom: c.dom,
                 jumps: c.jumps,
                 aad_jumps_on_mount: c.aad_jumps_on_mount,
+                rigs: c.rigs || [],  // ✅ este es el correcto
+                // ❌ NO pongas mounted
             }));
+
+            console.table(formatted);
 
             setRows(formatted);
         } catch (err) {

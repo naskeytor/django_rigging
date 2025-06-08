@@ -56,22 +56,29 @@ class ComponentSerializer(serializers.ModelSerializer):
     size_name = serializers.CharField(source='size.size', read_only=True)
     status_name = serializers.CharField(source='status.status', read_only=True)
 
+    # 🔹 Añadir los rigs con rig_number
+    rigs = serializers.SerializerMethodField()
+
+    def get_rigs(self, obj):
+        return [{"id": r.id, "rig_number": r.rig_number} for r in obj.rigs.all()]
+
     class Meta:
         model = Component
         fields = [
             'id',
             'serial_number',
-            'component_type',         # ✅ ← Campo real para <Select>
+            'component_type',
             'model',
             'size',
             'status',
             'dom',
             'jumps',
             'aad_jumps_on_mount',
-            'component_type_name',    # ✅ ← Nombre para mostrar en tabla
+            'component_type_name',
             'model_name',
             'size_name',
-            'status_name'
+            'status_name',
+            'rigs',  # 🔹 Incluir aquí también
         ]
 
 
