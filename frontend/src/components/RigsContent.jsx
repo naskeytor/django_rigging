@@ -246,7 +246,7 @@ const RigsContent = () => {
                 onSave={handleSave}
                 onDelete={handleDelete}
                 extraOptions={{ components }}
-                disableRowClick
+                disableRowClick={true}
             />
 
             <Dialog open={Boolean(selectedComponent)} onClose={() => setSelectedComponent(null)} maxWidth="sm" fullWidth>

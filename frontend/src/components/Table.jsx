@@ -14,11 +14,12 @@ import {
 import RecordForm from "./RecordForm";
 import CloseIcon from "@mui/icons-material/Close";
 
-const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraOptions}) => {
+const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraOptions, disableRowClick = false}) => {
     const [selectedRow, setSelectedRow] = React.useState(null);
     const [mode, setMode] = React.useState("view");
 
     const handleRowClick = (params) => {
+        if (disableRowClick) return;
         console.log("🧪 Fila seleccionada:", params.row);
         setSelectedRow(params.row);
         setMode("view");
@@ -99,7 +100,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
                         onEdit={handleEdit}
                         onDelete={handleInternalDelete}
                         entityType={entityType}
-                        extraOptions={extraOptions} // ✅ Paso extraOptions a RecordForm
+                        extraOptions={extraOptions}
                     />
                 </DialogContent>
             </Dialog>
