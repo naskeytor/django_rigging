@@ -97,13 +97,14 @@ class Component(models.Model):
     jumps = models.IntegerField(default=0)
     aad_jumps_on_mount = models.IntegerField(default=0)
 
+
     def __str__(self):
         return self.serial_number
 
 
 class Rig(models.Model):
     rig_number = models.CharField(max_length=10)
-    components = models.ManyToManyField(Component, related_name='rigs')
+    components = models.ManyToManyField(Component, related_name='rigs', blank=True)
     current_aad_jumps = models.IntegerField(default=0)
 
     def __str__(self):

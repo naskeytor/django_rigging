@@ -1,8 +1,14 @@
-// src/components/ComponentsContent.jsx
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useMemo} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
-import {COMPONENT_TABLE_COLUMNS} from "../config/componentTableConfig";
+import {getComponentColumns} from "../config/componentTableConfig";
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    Typography,
+    Box,
+} from "@mui/material";
 
 const ComponentsContent = () => {
     const [rows, setRows] = useState([]);
@@ -12,6 +18,29 @@ const ComponentsContent = () => {
         sizes: [],
         statuses: [],
     });
+
+    const [selectedRig, setSelectedRig] = useState(null);
+    const [rigDetailsOpen, setRigDetailsOpen] = useState(false);
+
+    const handleMountedClick = async (rigId) => {
+        console.log("📦 handleMountedClick llamado con rigId:", rigId);
+
+        const token = sessionStorage.getItem("accessToken");
+        try {
+            const res = await axios.get(`http://localhost:8000/api/rigs/${rigId}/?summary=1`, {
+                headers: {Authorization: `Bearer ${token}`},
+            });
+
+            console.log("📋 Rig recibido:", res.data);
+
+            setSelectedRig(res.data);
+            setRigDetailsOpen(true);
+        } catch (err) {
+            console.error("❌ Error al obtener rig:", err);
+        }
+    };
+
+    const columns = useMemo(() => getComponentColumns(handleMountedClick), []);
 
     const fetchComponents = async () => {
         const token = sessionStorage.getItem("accessToken");
@@ -24,7 +53,7 @@ const ComponentsContent = () => {
             const formatted = res.data.map((c) => ({
                 id: c.id,
                 serial_number: c.serial_number,
-                component_type: c.component_type, // ID real
+                component_type: c.component_type,
                 component_type_name: c.component_type_name,
                 model: c.model,
                 model_name: c.model_name,
@@ -35,6 +64,7 @@ const ComponentsContent = () => {
                 dom: c.dom,
                 jumps: c.jumps,
                 aad_jumps_on_mount: c.aad_jumps_on_mount,
+                rigs: c.rigs || [],
             }));
 
             setRows(formatted);
@@ -49,10 +79,18 @@ const ComponentsContent = () => {
 
         try {
             const [types, models, sizes, statuses] = await Promise.all([
-                axios.get("http://localhost:8000/api/component_types/", {headers: {Authorization: `Bearer ${token}`}}),
-                axios.get("http://localhost:8000/api/models/", {headers: {Authorization: `Bearer ${token}`}}),
-                axios.get("http://localhost:8000/api/sizes/", {headers: {Authorization: `Bearer ${token}`}}),
-                axios.get("http://localhost:8000/api/statuses/", {headers: {Authorization: `Bearer ${token}`}}),
+                axios.get("http://localhost:8000/api/component_types/", {
+                    headers: {Authorization: `Bearer ${token}`},
+                }),
+                axios.get("http://localhost:8000/api/models/", {
+                    headers: {Authorization: `Bearer ${token}`},
+                }),
+                axios.get("http://localhost:8000/api/sizes/", {
+                    headers: {Authorization: `Bearer ${token}`},
+                }),
+                axios.get("http://localhost:8000/api/statuses/", {
+                    headers: {Authorization: `Bearer ${token}`},
+                }),
             ]);
 
             setOptions({
@@ -123,13 +161,30 @@ const ComponentsContent = () => {
             <h2>Lista de Componentes</h2>
             <CustomTable
                 title="Components"
-                columns={COMPONENT_TABLE_COLUMNS}
+                columns={columns}
                 rows={rows}
                 entityType="component"
                 onSave={handleSave}
                 onDelete={handleDelete}
                 extraOptions={options}
             />
+
+            <Dialog open={rigDetailsOpen} onClose={() => setRigDetailsOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Rig Details</DialogTitle>
+                <DialogContent dividers sx={{backgroundColor: "#222", color: "white"}}>
+                    {selectedRig ? (
+                        <Box>
+                            <Typography><strong>Rig Number:</strong> {selectedRig.rig_number}</Typography>
+                            <Typography><strong>Canopy:</strong> {selectedRig.canopy_name}</Typography>
+                            <Typography><strong>Container:</strong> {selectedRig.container_name}</Typography>
+                            <Typography><strong>Reserve:</strong> {selectedRig.reserve_name}</Typography>
+                            <Typography><strong>AAD:</strong> {selectedRig.aad_name}</Typography>
+                        </Box>
+                    ) : (
+                        <Typography>Loading...</Typography>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

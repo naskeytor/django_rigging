@@ -1,4 +1,3 @@
-// src/components/Table.jsx
 import * as React from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import {
@@ -14,12 +13,22 @@ import {
 import RecordForm from "./RecordForm";
 import CloseIcon from "@mui/icons-material/Close";
 
-const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraOptions}) => {
+const CustomTable = ({
+                         title,
+                         columns,
+                         rows,
+                         entityType,
+                         onSave,
+                         onDelete,
+                         extraOptions,
+                         disableRowClick = false,
+                         componentProps = {}, // 🔹 se reciben funciones como handleMountedClick
+                     }) => {
     const [selectedRow, setSelectedRow] = React.useState(null);
     const [mode, setMode] = React.useState("view");
 
     const handleRowClick = (params) => {
-        console.log("🧪 Fila seleccionada:", params.row);
+        if (disableRowClick) return;
         setSelectedRow(params.row);
         setMode("view");
     };
@@ -41,8 +50,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
         setSelectedRow(null);
     };
 
-    console.log("📋 Filas (rows):", rows);
-    console.log("🧱 Columnas (columns):", columns);
+    const enhancedColumns = React.useMemo(() => columns, [columns]);
 
     return (
         <Paper elevation={3} sx={{padding: 2, bgcolor: "background.default"}}>
@@ -65,12 +73,20 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
                 <DataGrid
                     getRowId={(row) => row.id}
                     rows={rows}
-                    columns={columns}
+                    columns={enhancedColumns}
                     pageSizeOptions={[5, 10, 20, 100]}
                     initialState={{pagination: {paginationModel: {pageSize: 10}}}}
                     disableRowSelectionOnClick
-                    onRowClick={handleRowClick}
+                    onRowClick={(params, event) => {
+                        if (params.field === "mounted") return; // ❌ no abrir modal del componente
+                        handleRowClick(params);
+                    }}
                     autoHeight
+                    slotProps={{
+                        baseButton: {
+                            ...componentProps,
+                        },
+                    }}
                 />
             </Box>
 
@@ -99,7 +115,7 @@ const CustomTable = ({title, columns, rows, entityType, onSave, onDelete, extraO
                         onEdit={handleEdit}
                         onDelete={handleInternalDelete}
                         entityType={entityType}
-                        extraOptions={extraOptions} // ✅ Paso extraOptions a RecordForm
+                        extraOptions={extraOptions}
                     />
                 </DialogContent>
             </Dialog>

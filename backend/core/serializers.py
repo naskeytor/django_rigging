@@ -56,22 +56,29 @@ class ComponentSerializer(serializers.ModelSerializer):
     size_name = serializers.CharField(source='size.size', read_only=True)
     status_name = serializers.CharField(source='status.status', read_only=True)
 
+    # 🔹 Añadir los rigs con rig_number
+    rigs = serializers.SerializerMethodField()
+
+    def get_rigs(self, obj):
+        return [{"id": r.id, "rig_number": r.rig_number} for r in obj.rigs.all()]
+
     class Meta:
         model = Component
         fields = [
             'id',
             'serial_number',
-            'component_type',         # ✅ ← Campo real para <Select>
+            'component_type',
             'model',
             'size',
             'status',
             'dom',
             'jumps',
             'aad_jumps_on_mount',
-            'component_type_name',    # ✅ ← Nombre para mostrar en tabla
+            'component_type_name',
             'model_name',
             'size_name',
-            'status_name'
+            'status_name',
+            'rigs',  # 🔹 Incluir aquí también
         ]
 
 
@@ -125,3 +132,41 @@ class RiggingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rigging
         fields = '__all__'
+
+
+class RigSummarySerializer(serializers.ModelSerializer):
+    canopy_name = serializers.SerializerMethodField()
+    container_name = serializers.SerializerMethodField()
+    reserve_name = serializers.SerializerMethodField()
+    aad_name = serializers.SerializerMethodField()
+
+    def format_with_size(self, component):
+        if not component:
+            return ""
+        model = getattr(component.model, "name", "")
+        size = getattr(component.size, "size", "")
+        return f"{model}-{size}" if size else model
+
+    def get_component(self, obj, type_name):
+        return obj.components.filter(component_type__component_type=type_name).select_related("model", "size").first()
+
+    def get_canopy_name(self, obj):
+        return self.format_with_size(self.get_component(obj, "Canopy"))
+
+    def get_reserve_name(self, obj):
+        return self.format_with_size(self.get_component(obj, "Reserve"))
+
+    def get_container_name(self, obj):
+        component = self.get_component(obj, "Container")
+        return component.model.name if component and component.model else ""
+
+    def get_aad_name(self, obj):
+        component = self.get_component(obj, "AAD")
+        return component.model.name if component and component.model else ""
+
+    class Meta:
+        model = Rig
+        fields = [
+            "id", "rig_number", "current_aad_jumps",
+            "canopy_name", "container_name", "reserve_name", "aad_name"
+        ]

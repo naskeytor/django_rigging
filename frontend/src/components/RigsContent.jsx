@@ -7,6 +7,8 @@ import {
     DialogTitle,
     DialogContent,
     Button,
+    Typography,
+    Box,
 } from "@mui/material";
 
 const RigsContent = () => {
@@ -21,6 +23,7 @@ const RigsContent = () => {
 
     const [selectedComponent, setSelectedComponent] = useState(null);
     const [componentMode, setComponentMode] = useState("view");
+    const [rigInfo, setRigInfo] = useState(null);
 
     const fetchRigs = async () => {
         const token = sessionStorage.getItem("accessToken");
@@ -38,18 +41,29 @@ const RigsContent = () => {
         const token = sessionStorage.getItem("accessToken");
         const headers = { Authorization: `Bearer ${token}` };
 
+        const fetchComponentsByType = async (type) => {
+            const res = await axios.get(`http://localhost:8000/api/components/available/?type=${type}`, { headers });
+            return res.data;
+        };
+
         const fetchData = async () => {
             try {
                 const [
                     rigsRes,
-                    componentsRes,
+                    canopies,
+                    containers,
+                    reserves,
+                    aads,
                     typesRes,
                     modelsRes,
                     sizesRes,
                     statusesRes,
                 ] = await Promise.all([
                     axios.get("http://localhost:8000/api/rigs/", { headers }),
-                    axios.get("http://localhost:8000/api/components/", { headers }),
+                    fetchComponentsByType("Canopy"),
+                    fetchComponentsByType("Container"),
+                    fetchComponentsByType("Reserve"),
+                    fetchComponentsByType("AAD"),
                     axios.get("http://localhost:8000/api/component_types/", { headers }),
                     axios.get("http://localhost:8000/api/models/", { headers }),
                     axios.get("http://localhost:8000/api/sizes/", { headers }),
@@ -57,7 +71,12 @@ const RigsContent = () => {
                 ]);
 
                 setRows(rigsRes.data);
-                setComponents(componentsRes.data);
+                setComponents([
+                    ...canopies.map((c) => ({ ...c, component_type_name: "Canopy" })),
+                    ...containers.map((c) => ({ ...c, component_type_name: "Container" })),
+                    ...reserves.map((c) => ({ ...c, component_type_name: "Reserve" })),
+                    ...aads.map((c) => ({ ...c, component_type_name: "AAD" })),
+                ]);
                 setOptions({
                     componentTypes: typesRes.data,
                     models: modelsRes.data,
@@ -112,6 +131,17 @@ const RigsContent = () => {
         }
     };
 
+    const handleRigInfoClick = async (rigId) => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = { Authorization: `Bearer ${token}` };
+        try {
+            const res = await axios.get(`http://localhost:8000/api/rigs/${rigId}/`, { headers });
+            setRigInfo(res.data);
+        } catch (err) {
+            console.error("❌ Error al cargar rig:", err);
+        }
+    };
+
     const processedRows = useMemo(() => {
         return rows.map((rig) => {
             const getComponent = (type) => rig.components?.find(c => c.component_type_name === type);
@@ -121,26 +151,33 @@ const RigsContent = () => {
             const reserve = getComponent("Reserve");
             const aad = getComponent("AAD");
 
+            const formatLabel = (comp, includeSize = false) => {
+                if (!comp) return "—";
+                const model = comp.model_name || "";
+                const size = includeSize && comp.size_name ? ` - ${comp.size_name}` : "";
+                return `${model}${size}`;
+            };
+
             return {
                 ...rig,
-                canopy_serial: canopy?.serial_number || "—",
+                canopy_label: formatLabel(canopy, true),
                 canopy_id: canopy?.id || null,
 
-                container_serial: container?.serial_number || "—",
+                container_label: formatLabel(container, false),
                 container_id: container?.id || null,
 
-                reserve_serial: reserve?.serial_number || "—",
+                reserve_label: formatLabel(reserve, true),
                 reserve_id: reserve?.id || null,
 
-                aad_serial: aad?.serial_number || "—",
+                aad_label: formatLabel(aad, false),
                 aad_id: aad?.id || null,
             };
         });
     }, [rows]);
 
-    const renderComponentCell = (serialField, idField) => (params) => {
+    const renderComponentCell = (labelField, idField) => (params) => {
         const row = params.row;
-        if (!row[idField]) return row[serialField];
+        if (!row[idField]) return row[labelField];
         return (
             <Button
                 variant="text"
@@ -149,38 +186,53 @@ const RigsContent = () => {
                     handleComponentClick(row[idField]);
                 }}
             >
-                {row[serialField]}
+                {row[labelField]}
             </Button>
         );
     };
 
     const columns = [
-        { field: "id", headerName: "ID", width: 70 },
-        { field: "rig_number", headerName: "Rig Number", width: 150 },
+        { field: "id", headerName: "ID", width: 70, sortable: false },
+        {
+            field: "rig_number",
+            headerName: "Rig Number",
+            width: 150,
+            renderCell: (params) => (
+                <Button
+                    variant="text"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleRigInfoClick(params.row.id);
+                    }}
+                >
+                    {params.value}
+                </Button>
+            ),
+        },
         { field: "current_aad_jumps", headerName: "AAD Jumps", width: 150 },
         {
-            field: "canopy_serial",
+            field: "canopy_label",
             headerName: "Canopy",
-            width: 150,
-            renderCell: renderComponentCell("canopy_serial", "canopy_id"),
+            width: 200,
+            renderCell: renderComponentCell("canopy_label", "canopy_id"),
         },
         {
-            field: "container_serial",
+            field: "container_label",
             headerName: "Container",
-            width: 150,
-            renderCell: renderComponentCell("container_serial", "container_id"),
+            width: 180,
+            renderCell: renderComponentCell("container_label", "container_id"),
         },
         {
-            field: "reserve_serial",
+            field: "reserve_label",
             headerName: "Reserve",
-            width: 150,
-            renderCell: renderComponentCell("reserve_serial", "reserve_id"),
+            width: 200,
+            renderCell: renderComponentCell("reserve_label", "reserve_id"),
         },
         {
-            field: "aad_serial",
+            field: "aad_label",
             headerName: "AAD",
-            width: 150,
-            renderCell: renderComponentCell("aad_serial", "aad_id"),
+            width: 180,
+            renderCell: renderComponentCell("aad_label", "aad_id"),
         },
     ];
 
@@ -194,6 +246,7 @@ const RigsContent = () => {
                 onSave={handleSave}
                 onDelete={handleDelete}
                 extraOptions={{ components }}
+                disableRowClick={true}
             />
 
             <Dialog open={Boolean(selectedComponent)} onClose={() => setSelectedComponent(null)} maxWidth="sm" fullWidth>
@@ -227,6 +280,21 @@ const RigsContent = () => {
                             setSelectedComponent(null);
                         }}
                     />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={Boolean(rigInfo)} onClose={() => setRigInfo(null)} maxWidth="sm" fullWidth>
+                <DialogTitle>Rig Details</DialogTitle>
+                <DialogContent>
+                    {rigInfo && (
+                        <Box px={2} py={1}>
+                            <Typography variant="body1"><strong>Rig Number:</strong> {rigInfo.rig_number}</Typography>
+                            <Typography variant="body1"><strong>Canopy:</strong> {rigInfo.components?.find(c => c.component_type_name === "Canopy")?.model_name || "—"}</Typography>
+                            <Typography variant="body1"><strong>Container:</strong> {rigInfo.components?.find(c => c.component_type_name === "Container")?.model_name || "—"}</Typography>
+                            <Typography variant="body1"><strong>Reserve:</strong> {rigInfo.components?.find(c => c.component_type_name === "Reserve")?.model_name || "—"}</Typography>
+                            <Typography variant="body1"><strong>AAD:</strong> {rigInfo.components?.find(c => c.component_type_name === "AAD")?.model_name || "—"}</Typography>
+                        </Box>
+                    )}
                 </DialogContent>
             </Dialog>
         </>

@@ -11,6 +11,16 @@ class ComponentViewSet(viewsets.ModelViewSet):
     serializer_class = ComponentSerializer
     permission_classes = [IsAuthenticated]  # Solo usuarios autenticados pueden acceder
 
+    @action(detail=False, methods=["get"], url_path="available")
+    def available_components(self, request):
+        component_type = request.query_params.get("type")
+        queryset = Component.objects.filter(rigs=None)
+
+        if component_type:
+            queryset = queryset.filter(component_type__component_type__iexact=component_type)
+
+        return Response(ComponentSerializer(queryset, many=True).data)
+
     def list(self, request, *args, **kwargs):
         """GET /api/components/ → Listar todos los componentes"""
         return super().list(request, *args, **kwargs)
