@@ -4,13 +4,16 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from core.models import Rig, Component
-from core.serializers import RigSerializer, RigWriteSerializer
+from core.serializers import RigSerializer, RigWriteSerializer, RigSummarySerializer
+
 
 class RigViewSet(viewsets.ModelViewSet):
     queryset = Rig.objects.all()
     permission_classes = [AllowAny] #[IsAuthenticated]
 
     def get_serializer_class(self):
+        if self.action == 'retrieve' and self.request.query_params.get("summary") == "1":
+            return RigSummarySerializer
         if self.action in ['create', 'update', 'partial_update']:
             return RigWriteSerializer
         return RigSerializer

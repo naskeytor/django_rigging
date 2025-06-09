@@ -1,4 +1,3 @@
-// src/components/Table.jsx
 import * as React from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import {
@@ -23,6 +22,7 @@ const CustomTable = ({
                          onDelete,
                          extraOptions,
                          disableRowClick = false,
+                         componentProps = {}, // 🔹 se reciben funciones como handleMountedClick
                      }) => {
     const [selectedRow, setSelectedRow] = React.useState(null);
     const [mode, setMode] = React.useState("view");
@@ -77,8 +77,16 @@ const CustomTable = ({
                     pageSizeOptions={[5, 10, 20, 100]}
                     initialState={{pagination: {paginationModel: {pageSize: 10}}}}
                     disableRowSelectionOnClick
-                    onRowClick={handleRowClick}
+                    onRowClick={(params, event) => {
+                        if (params.field === "mounted") return; // ❌ no abrir modal del componente
+                        handleRowClick(params);
+                    }}
                     autoHeight
+                    slotProps={{
+                        baseButton: {
+                            ...componentProps,
+                        },
+                    }}
                 />
             </Box>
 
