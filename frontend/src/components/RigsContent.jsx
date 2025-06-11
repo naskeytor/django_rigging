@@ -9,6 +9,10 @@ import {
     Button,
     Typography,
     Box,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from "@mui/material";
 
 const RigsContent = () => {
@@ -24,6 +28,10 @@ const RigsContent = () => {
     const [selectedComponent, setSelectedComponent] = useState(null);
     const [componentMode, setComponentMode] = useState("view");
     const [rigInfo, setRigInfo] = useState(null);
+
+    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [assignTarget, setAssignTarget] = useState(null);
+    const [selectedAvailableComponentId, setSelectedAvailableComponentId] = useState("");
 
     const fetchRigs = async () => {
         const token = sessionStorage.getItem("accessToken");
@@ -94,12 +102,52 @@ const RigsContent = () => {
         }
     };
 
-    const renderComponentCell = (labelField, idField) => (params) => {
+    const handleAssignClick = (rigId, componentType) => {
+        setAssignTarget({ rigId, componentType });
+        setSelectedAvailableComponentId("");
+        setAssignDialogOpen(true);
+    };
+
+    const handleAssignConfirm = async () => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        try {
+            const rig = rows.find(r => r.id === assignTarget.rigId);
+            const updatedComponents = [
+                rig.components.find(c => c.component_type_name === "Canopy")?.id,
+                rig.components.find(c => c.component_type_name === "Container")?.id,
+                rig.components.find(c => c.component_type_name === "Reserve")?.id,
+                rig.components.find(c => c.component_type_name === "AAD")?.id,
+                selectedAvailableComponentId,
+            ].filter(Boolean);
+
+            await axios.put(`http://localhost:8000/api/rigs/${assignTarget.rigId}/`, {
+                rig_number: rig.rig_number,
+                current_aad_jumps: rig.current_aad_jumps,
+                components: updatedComponents,
+            }, { headers });
+
+            await fetchRigs();
+        } catch (err) {
+            console.error("❌ Error al asignar componente:", err);
+        } finally {
+            setAssignDialogOpen(false);
+        }
+    };
+
+    const renderComponentCell = (labelField, idField, typeName) => (params) => {
         const row = params.row;
         const label = row[labelField];
         const componentId = row[idField];
 
-        if (!componentId) return label;
+        if (!componentId) {
+            return (
+                <Button variant="text" onClick={() => handleAssignClick(row.id, typeName)}>
+                    —
+                </Button>
+            );
+        }
 
         const component = components.find(c => c.id === componentId);
 
@@ -146,27 +194,31 @@ const RigsContent = () => {
             field: "canopy_label",
             headerName: "Canopy",
             width: 200,
-            renderCell: renderComponentCell("canopy_label", "canopy_id"),
+            renderCell: renderComponentCell("canopy_label", "canopy_id", "Canopy"),
         },
         {
             field: "container_label",
             headerName: "Container",
             width: 180,
-            renderCell: renderComponentCell("container_label", "container_id"),
+            renderCell: renderComponentCell("container_label", "container_id", "Container"),
         },
         {
             field: "reserve_label",
             headerName: "Reserve",
             width: 200,
-            renderCell: renderComponentCell("reserve_label", "reserve_id"),
+            renderCell: renderComponentCell("reserve_label", "reserve_id", "Reserve"),
         },
         {
             field: "aad_label",
             headerName: "AAD",
             width: 180,
-            renderCell: renderComponentCell("aad_label", "aad_id"),
+            renderCell: renderComponentCell("aad_label", "aad_id", "AAD"),
         },
     ];
+
+    const availableComponents = components.filter(c =>
+        c.component_type_name === assignTarget?.componentType && (!c.rigs || c.rigs.length === 0)
+    );
 
     return (
         <>
@@ -255,6 +307,33 @@ const RigsContent = () => {
                             setSelectedComponent(null);
                         }}
                     />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={Boolean(assignDialogOpen)} onClose={() => setAssignDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Seleccionar {assignTarget?.componentType}</DialogTitle>
+                <DialogContent>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Componente Disponible</InputLabel>
+                        <Select
+                            value={selectedAvailableComponentId}
+                            onChange={(e) => setSelectedAvailableComponentId(e.target.value)}
+                        >
+                            {availableComponents.map((comp) => (
+                                <MenuItem key={comp.id} value={comp.id}>
+                                    {comp.model_name} ({comp.serial_number})
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <Box mt={2} textAlign="right">
+                        <Button onClick={() => setAssignDialogOpen(false)} style={{ marginRight: 8 }}>
+                            Cancelar
+                        </Button>
+                        <Button variant="contained" onClick={handleAssignConfirm} disabled={!selectedAvailableComponentId}>
+                            Confirmar
+                        </Button>
+                    </Box>
                 </DialogContent>
             </Dialog>
 
