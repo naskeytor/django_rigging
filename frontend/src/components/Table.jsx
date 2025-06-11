@@ -116,6 +116,10 @@ const CustomTable = ({
                         onDelete={handleInternalDelete}
                         entityType={entityType}
                         extraOptions={extraOptions}
+                        isMounted={selectedRow?.isMounted}
+                        currentRigId={selectedRow?.currentRigId}
+                        onMount={componentProps?.onMount}
+                        onUnmount={componentProps?.onUnmount}
                     />
                 </DialogContent>
             </Dialog>

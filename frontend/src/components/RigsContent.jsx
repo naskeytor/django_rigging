@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, {useEffect, useState, useMemo} from "react";
 import axios from "axios";
 import CustomTable from "../components/Table";
 import RecordForm from "../components/RecordForm";
@@ -27,10 +27,10 @@ const RigsContent = () => {
 
     const fetchRigs = async () => {
         const token = sessionStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {Authorization: `Bearer ${token}`};
 
         try {
-            const res = await axios.get("http://localhost:8000/api/rigs/", { headers });
+            const res = await axios.get("http://localhost:8000/api/rigs/", {headers});
             setRows(res.data);
         } catch (err) {
             console.error("❌ Error al recargar rigs:", err);
@@ -39,10 +39,10 @@ const RigsContent = () => {
 
     useEffect(() => {
         const token = sessionStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {Authorization: `Bearer ${token}`};
 
         const fetchComponentsByType = async (type) => {
-            const res = await axios.get(`http://localhost:8000/api/components/available/?type=${type}`, { headers });
+            const res = await axios.get(`http://localhost:8000/api/components/available/?type=${type}`, {headers});
             return res.data;
         };
 
@@ -59,24 +59,39 @@ const RigsContent = () => {
                     sizesRes,
                     statusesRes,
                 ] = await Promise.all([
-                    axios.get("http://localhost:8000/api/rigs/", { headers }),
+                    axios.get("http://localhost:8000/api/rigs/", {headers}),
                     fetchComponentsByType("Canopy"),
                     fetchComponentsByType("Container"),
                     fetchComponentsByType("Reserve"),
                     fetchComponentsByType("AAD"),
-                    axios.get("http://localhost:8000/api/component_types/", { headers }),
-                    axios.get("http://localhost:8000/api/models/", { headers }),
-                    axios.get("http://localhost:8000/api/sizes/", { headers }),
-                    axios.get("http://localhost:8000/api/statuses/", { headers }),
+                    axios.get("http://localhost:8000/api/component_types/", {headers}),
+                    axios.get("http://localhost:8000/api/models/", {headers}),
+                    axios.get("http://localhost:8000/api/sizes/", {headers}),
+                    axios.get("http://localhost:8000/api/statuses/", {headers}),
                 ]);
 
                 setRows(rigsRes.data);
-                setComponents([
-                    ...canopies.map((c) => ({ ...c, component_type_name: "Canopy" })),
-                    ...containers.map((c) => ({ ...c, component_type_name: "Container" })),
-                    ...reserves.map((c) => ({ ...c, component_type_name: "Reserve" })),
-                    ...aads.map((c) => ({ ...c, component_type_name: "AAD" })),
-                ]);
+
+                const currentRigIds = rigsRes.data.map(r => r.id);
+
+                const enrichWithMountData = (component) => {
+                    const rigIds = component.rigs?.map(r => r.id) || [];
+                    return currentRigIds.map(rigId => ({
+                        ...component,
+                        currentRigId: rigId,
+                        isMounted: rigIds.includes(rigId)
+                    }));
+                };
+
+                const enrichedComponents = [
+                    ...canopies.flatMap(enrichWithMountData),
+                    ...containers.flatMap(enrichWithMountData),
+                    ...reserves.flatMap(enrichWithMountData),
+                    ...aads.flatMap(enrichWithMountData),
+                ];
+
+                setComponents(enrichedComponents);
+
                 setOptions({
                     componentTypes: typesRes.data,
                     models: modelsRes.data,
@@ -93,7 +108,7 @@ const RigsContent = () => {
 
     const handleSave = async (data, mode) => {
         const token = sessionStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {Authorization: `Bearer ${token}`};
 
         const payload = {
             rig_number: data.rig_number,
@@ -102,9 +117,9 @@ const RigsContent = () => {
         };
 
         if (mode === "create") {
-            await axios.post("http://localhost:8000/api/rigs/", payload, { headers });
+            await axios.post("http://localhost:8000/api/rigs/", payload, {headers});
         } else {
-            await axios.put(`http://localhost:8000/api/rigs/${data.id}/`, payload, { headers });
+            await axios.put(`http://localhost:8000/api/rigs/${data.id}/`, payload, {headers});
         }
 
         await fetchRigs();
@@ -112,18 +127,18 @@ const RigsContent = () => {
 
     const handleDelete = async (row) => {
         const token = sessionStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {Authorization: `Bearer ${token}`};
 
-        await axios.delete(`http://localhost:8000/api/rigs/${row.id}/`, { headers });
+        await axios.delete(`http://localhost:8000/api/rigs/${row.id}/`, {headers});
         setRows((prev) => prev.filter((r) => r.id !== row.id));
     };
 
     const handleComponentClick = async (componentId) => {
         const token = sessionStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {Authorization: `Bearer ${token}`};
 
         try {
-            const res = await axios.get(`http://localhost:8000/api/components/${componentId}/`, { headers });
+            const res = await axios.get(`http://localhost:8000/api/components/${componentId}/`, {headers});
             setSelectedComponent(res.data);
             setComponentMode("view");
         } catch (err) {
@@ -133,9 +148,9 @@ const RigsContent = () => {
 
     const handleRigInfoClick = async (rigId) => {
         const token = sessionStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {Authorization: `Bearer ${token}`};
         try {
-            const res = await axios.get(`http://localhost:8000/api/rigs/${rigId}/`, { headers });
+            const res = await axios.get(`http://localhost:8000/api/rigs/${rigId}/`, {headers});
             setRigInfo(res.data);
         } catch (err) {
             console.error("❌ Error al cargar rig:", err);
@@ -177,22 +192,46 @@ const RigsContent = () => {
 
     const renderComponentCell = (labelField, idField) => (params) => {
         const row = params.row;
-        if (!row[idField]) return row[labelField];
+        const label = row[labelField];
+        const componentId = row[idField];
+
+        if (!componentId) return label;
+
+        const component = components.find(c => c.id === componentId);
+        const isMounted = component?.rigs?.length > 0;
+
         return (
-            <Button
-                variant="text"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleComponentClick(row[idField]);
-                }}
-            >
-                {row[labelField]}
-            </Button>
+            <Box>
+                <Button
+                    variant="text"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleComponentClick(componentId);
+                    }}
+                >
+                    {label}
+                </Button>
+                {component && (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            isMounted
+                                ? console.log("Desmontar", componentId)
+                                : console.log("Montar", componentId);
+                        }}
+                    >
+                        {isMounted ? "Desmontar" : "Montar"}
+                    </Button>
+                )}
+            </Box>
         );
     };
 
+
     const columns = [
-        { field: "id", headerName: "ID", width: 70, sortable: false },
+        {field: "id", headerName: "ID", width: 70, sortable: false},
         {
             field: "rig_number",
             headerName: "Rig Number",
@@ -209,7 +248,7 @@ const RigsContent = () => {
                 </Button>
             ),
         },
-        { field: "current_aad_jumps", headerName: "AAD Jumps", width: 150 },
+        {field: "current_aad_jumps", headerName: "AAD Jumps", width: 150},
         {
             field: "canopy_label",
             headerName: "Canopy",
@@ -245,11 +284,12 @@ const RigsContent = () => {
                 rows={processedRows}
                 onSave={handleSave}
                 onDelete={handleDelete}
-                extraOptions={{ components }}
+                extraOptions={{components}}
                 disableRowClick={true}
             />
 
-            <Dialog open={Boolean(selectedComponent)} onClose={() => setSelectedComponent(null)} maxWidth="sm" fullWidth>
+            <Dialog open={Boolean(selectedComponent)} onClose={() => setSelectedComponent(null)} maxWidth="sm"
+                    fullWidth>
                 <DialogTitle>Detalle del Componente</DialogTitle>
                 <DialogContent>
                     <RecordForm
@@ -261,9 +301,9 @@ const RigsContent = () => {
                         onEdit={() => setComponentMode("edit")}
                         onDelete={async () => {
                             const token = sessionStorage.getItem("accessToken");
-                            const headers = { Authorization: `Bearer ${token}` };
+                            const headers = {Authorization: `Bearer ${token}`};
                             try {
-                                await axios.delete(`http://localhost:8000/api/components/${selectedComponent.id}/`, { headers });
+                                await axios.delete(`http://localhost:8000/api/components/${selectedComponent.id}/`, {headers});
                                 await fetchRigs();
                             } catch (err) {
                                 console.error("❌ Error al eliminar componente:", err);
@@ -272,9 +312,9 @@ const RigsContent = () => {
                         }}
                         onSave={async (formData, mode) => {
                             const token = sessionStorage.getItem("accessToken");
-                            const headers = { Authorization: `Bearer ${token}` };
+                            const headers = {Authorization: `Bearer ${token}`};
                             if (mode === "edit") {
-                                await axios.put(`http://localhost:8000/api/components/${formData.id}/`, formData, { headers });
+                                await axios.put(`http://localhost:8000/api/components/${formData.id}/`, formData, {headers});
                             }
                             await fetchRigs();
                             setSelectedComponent(null);
@@ -289,10 +329,18 @@ const RigsContent = () => {
                     {rigInfo && (
                         <Box px={2} py={1}>
                             <Typography variant="body1"><strong>Rig Number:</strong> {rigInfo.rig_number}</Typography>
-                            <Typography variant="body1"><strong>Canopy:</strong> {rigInfo.components?.find(c => c.component_type_name === "Canopy")?.model_name || "—"}</Typography>
-                            <Typography variant="body1"><strong>Container:</strong> {rigInfo.components?.find(c => c.component_type_name === "Container")?.model_name || "—"}</Typography>
-                            <Typography variant="body1"><strong>Reserve:</strong> {rigInfo.components?.find(c => c.component_type_name === "Reserve")?.model_name || "—"}</Typography>
-                            <Typography variant="body1"><strong>AAD:</strong> {rigInfo.components?.find(c => c.component_type_name === "AAD")?.model_name || "—"}</Typography>
+                            <Typography
+                                variant="body1"><strong>Canopy:</strong> {rigInfo.components?.find(c => c.component_type_name === "Canopy")?.model_name || "—"}
+                            </Typography>
+                            <Typography
+                                variant="body1"><strong>Container:</strong> {rigInfo.components?.find(c => c.component_type_name === "Container")?.model_name || "—"}
+                            </Typography>
+                            <Typography
+                                variant="body1"><strong>Reserve:</strong> {rigInfo.components?.find(c => c.component_type_name === "Reserve")?.model_name || "—"}
+                            </Typography>
+                            <Typography
+                                variant="body1"><strong>AAD:</strong> {rigInfo.components?.find(c => c.component_type_name === "AAD")?.model_name || "—"}
+                            </Typography>
                         </Box>
                     )}
                 </DialogContent>
