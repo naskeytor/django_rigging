@@ -65,6 +65,7 @@ const ComponentsContent = () => {
                 jumps: c.jumps,
                 aad_jumps_on_mount: c.aad_jumps_on_mount,
                 rigs: c.rigs || [],
+                isMounted: c.rigs && c.rigs.length > 0, // 🔹 nuevo
             }));
 
             setRows(formatted);

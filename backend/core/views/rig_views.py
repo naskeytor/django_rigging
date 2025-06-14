@@ -18,6 +18,17 @@ class RigViewSet(viewsets.ModelViewSet):
             return RigWriteSerializer
         return RigSerializer
 
+    @action(detail=True, methods=["patch"], url_path="update-aad-jumps")
+    def update_aad_jumps(self, request, pk=None):
+        rig = self.get_object()
+        try:
+            new_value = int(request.data.get("new_value"))
+        except (TypeError, ValueError):
+            return Response({"error": "Invalid value"}, status=status.HTTP_400_BAD_REQUEST)
+
+        rig.update_aad_jumps(new_value)
+        return Response({"status": "updated", "new_value": new_value})
+
     def list(self, request, *args, **kwargs):
         # 🔹 Forzar uso de RigSerializer con componentes serializados
         self.serializer_class = RigSerializer
