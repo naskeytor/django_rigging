@@ -104,11 +104,30 @@ class Component(models.Model):
 
 class Rig(models.Model):
     rig_number = models.CharField(max_length=10)
-    components = models.ManyToManyField(Component, related_name='rigs', blank=True)
+    components = models.ManyToManyField('Component', related_name='rigs', blank=True)
     current_aad_jumps = models.IntegerField(default=0)
 
     def __str__(self):
         return self.rig_number
+
+    def update_aad_jumps(self, new_value):
+        old_value = self.current_aad_jumps
+        diff = new_value - old_value
+        if diff == 0:
+            return
+
+        self.current_aad_jumps = new_value
+        self.save()
+
+        for comp in self.components.all():
+            comp_type = comp.component_type.component_type.lower()
+            if comp_type in ["canopy", "container"]:
+                comp.jumps = (comp.jumps or 0) + diff
+                comp.save()
+            elif comp_type == "aad":
+                # 🔹 Actualizar el campo aad_jumps_on_mount también
+                comp.jumps = new_value
+                comp.save()
 
 
 class RiggingType(models.Model):
