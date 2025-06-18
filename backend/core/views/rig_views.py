@@ -8,17 +8,22 @@ from core.serializers import RigSerializer, RigWriteSerializer, RigSummarySerial
 
 
 class RigViewSet(viewsets.ModelViewSet):
-    queryset = Rig.objects.all()
+    queryset = Rig.objects.all().prefetch_related(
+        "components__model",
+        "components__size",
+        "components__component_type",
+        "components__status"
+    )
     permission_classes = [AllowAny] #[IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == 'retrieve' and self.request.query_params.get("summary") == "1":
             return RigSummarySerializer
-        if self.action == 'list':  # 🔹 Añade esto
+        if self.action == 'list' and self.request.query_params.get("summary") == "1":
             return RigSummarySerializer
         if self.action in ['create', 'update', 'partial_update']:
             return RigWriteSerializer
-        return RigSerializer
+        return RigSerializer  # ✅ incluir componentes siempre
 
     @action(detail=True, methods=["patch"], url_path="update-aad-jumps")
     def update_aad_jumps(self, request, pk=None):

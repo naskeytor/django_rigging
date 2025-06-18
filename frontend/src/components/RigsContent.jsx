@@ -38,7 +38,7 @@ const RigsContent = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         try {
-            const res = await axios.get("http://localhost:8000/api/rigs/", { headers });
+            const res = await axios.get("http://localhost:8000/api/rigs/?summary=1", { headers });
             setRows(res.data);
         } catch (err) {
             console.error("❌ Error al recargar rigs:", err);
