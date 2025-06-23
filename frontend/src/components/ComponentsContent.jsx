@@ -1,3 +1,4 @@
+// ComponentsContent.jsx restaurado
 import React, {useEffect, useState, useMemo} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
@@ -8,6 +9,12 @@ import {
     DialogContent,
     Typography,
     Box,
+    TextField,
+    Button,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
 } from "@mui/material";
 
 const ComponentsContent = () => {
@@ -22,17 +29,20 @@ const ComponentsContent = () => {
     const [selectedRig, setSelectedRig] = useState(null);
     const [rigDetailsOpen, setRigDetailsOpen] = useState(false);
 
-    const handleMountedClick = async (rigId) => {
-        console.log("📦 handleMountedClick llamado con rigId:", rigId);
+    const [aadJumpsInput, setAadJumpsInput] = useState(0);
+    const [unmountDialogOpen, setUnmountDialogOpen] = useState(false);
+    const [selectedComponent, setSelectedComponent] = useState(null);
 
+    const [mountDialogOpen, setMountDialogOpen] = useState(false);
+    const [availableRigs, setAvailableRigs] = useState([]);
+    const [selectedRigId, setSelectedRigId] = useState("");
+
+    const handleMountedClick = async (rigId) => {
         const token = sessionStorage.getItem("accessToken");
         try {
             const res = await axios.get(`http://localhost:8000/api/rigs/${rigId}/?summary=1`, {
                 headers: {Authorization: `Bearer ${token}`},
             });
-
-            console.log("📋 Rig recibido:", res.data);
-
             setSelectedRig(res.data);
             setRigDetailsOpen(true);
         } catch (err) {
@@ -40,44 +50,96 @@ const ComponentsContent = () => {
         }
     };
 
-    const columns = useMemo(() => getComponentColumns(handleMountedClick), []);
+    const handleUnmount = (component) => {
+        setSelectedComponent(component);
+        setAadJumpsInput(0);
+        setUnmountDialogOpen(true);
+    };
+
+    const confirmUnmount = async () => {
+        const token = sessionStorage.getItem("accessToken");
+        try {
+            await axios.post(
+                `http://localhost:8000/api/components/${selectedComponent.id}/umount/`,
+                {aad_jumps: aadJumpsInput},
+                {headers: {Authorization: `Bearer ${token}`}}
+            );
+            await fetchComponents();
+        } catch (err) {
+            console.error("❌ Error al desmontar componente:", err);
+        } finally {
+            setUnmountDialogOpen(false);
+            setSelectedComponent(null);
+        }
+    };
+
+    const handleMount = async (component) => {
+        setSelectedComponent(component);
+        setAadJumpsInput(0);
+        setSelectedRigId("");
+        setMountDialogOpen(true);
+        await fetchRigs(component.component_type_name);
+    };
+
+    const confirmMount = async () => {
+        const token = sessionStorage.getItem("accessToken");
+        try {
+            await axios.post(
+                `http://localhost:8000/api/components/${selectedComponent.id}/mount/`,
+                {rig_id: selectedRigId, aad_jumps: aadJumpsInput},
+                {headers: {Authorization: `Bearer ${token}`}}
+            );
+            await fetchComponents();
+        } catch (err) {
+            console.error("❌ Error al montar componente:", err);
+        } finally {
+            setMountDialogOpen(false);
+            setSelectedComponent(null);
+        }
+    };
+
+    const columns = useMemo(() => getComponentColumns(handleMountedClick, handleUnmount, handleMount), []);
 
     const fetchComponents = async () => {
         const token = sessionStorage.getItem("accessToken");
-
         try {
             const res = await axios.get("http://localhost:8000/api/components/", {
                 headers: {Authorization: `Bearer ${token}`},
             });
-
             const formatted = res.data.map((c) => ({
-                id: c.id,
-                serial_number: c.serial_number,
-                component_type: c.component_type,
-                component_type_name: c.component_type_name,
-                model: c.model,
-                model_name: c.model_name,
-                size: c.size,
-                size_name: c.size_name,
-                status: c.status,
-                status_name: c.status_name,
-                dom: c.dom,
-                jumps: c.jumps,
-                aad_jumps_on_mount: c.aad_jumps_on_mount,
-                rigs: c.rigs || [],
-                isMounted: c.rigs && c.rigs.length > 0, // 🔹 nuevo
+                ...c,
+                isMounted: c.rigs && c.rigs.length > 0,
             }));
-
             setRows(formatted);
         } catch (err) {
             console.error("❌ Error al obtener componentes:", err);
         }
     };
 
+    const fetchRigs = async (componentTypeName) => {
+        const token = sessionStorage.getItem("accessToken");
+        try {
+            const res = await axios.get("http://localhost:8000/api/rigs/", {
+                headers: {Authorization: `Bearer ${token}`},
+            });
+
+            const filtered = res.data.filter((rig) => {
+                if (componentTypeName.toLowerCase() === "canopy") return !rig.canopy_name;
+                if (componentTypeName.toLowerCase() === "container") return !rig.container_name;
+                if (componentTypeName.toLowerCase() === "reserve") return !rig.reserve_name;
+                if (componentTypeName.toLowerCase() === "aad") return !rig.aad_name;
+                return true;
+            });
+
+            setAvailableRigs(filtered);
+        } catch (err) {
+            console.error("❌ Error al obtener rigs:", err);
+        }
+    };
+
     const fetchOptions = async () => {
         const token = sessionStorage.getItem("accessToken");
         if (!token) return;
-
         try {
             const [types, models, sizes, statuses] = await Promise.all([
                 axios.get("http://localhost:8000/api/component_types/", {
@@ -93,7 +155,6 @@ const ComponentsContent = () => {
                     headers: {Authorization: `Bearer ${token}`},
                 }),
             ]);
-
             setOptions({
                 componentTypes: types.data,
                 models: models.data,
@@ -112,7 +173,6 @@ const ComponentsContent = () => {
 
     const handleSave = async (data, mode) => {
         const token = sessionStorage.getItem("accessToken");
-
         const payload = {
             serial_number: data.serial_number,
             component_type: data.component_type,
@@ -123,7 +183,6 @@ const ComponentsContent = () => {
             jumps: data.jumps,
             aad_jumps_on_mount: data.aad_jumps_on_mount,
         };
-
         try {
             if (mode === "edit") {
                 await axios.put(`http://localhost:8000/api/components/${data.id}/`, payload, {
@@ -134,7 +193,6 @@ const ComponentsContent = () => {
                     headers: {Authorization: `Bearer ${token}`},
                 });
             }
-
             await fetchComponents();
         } catch (err) {
             console.error("❌ Error al guardar componente:", err);
@@ -143,14 +201,11 @@ const ComponentsContent = () => {
 
     const handleDelete = async (record) => {
         const token = sessionStorage.getItem("accessToken");
-
         if (!window.confirm(`¿Eliminar componente "${record.serial_number}"?`)) return;
-
         try {
             await axios.delete(`http://localhost:8000/api/components/${record.id}/`, {
                 headers: {Authorization: `Bearer ${token}`},
             });
-
             setRows((prev) => prev.filter((r) => r.id !== record.id));
         } catch (err) {
             console.error("❌ Error al eliminar componente:", err);
@@ -168,6 +223,7 @@ const ComponentsContent = () => {
                 onSave={handleSave}
                 onDelete={handleDelete}
                 extraOptions={options}
+                componentProps={{onMount: handleMount, onUnmount: handleUnmount}}
             />
 
             <Dialog open={rigDetailsOpen} onClose={() => setRigDetailsOpen(false)} maxWidth="sm" fullWidth>
@@ -184,6 +240,59 @@ const ComponentsContent = () => {
                     ) : (
                         <Typography>Loading...</Typography>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={unmountDialogOpen} onClose={() => setUnmountDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Desmontar componente</DialogTitle>
+                <DialogContent>
+                    <Typography>Introduce el número actual de saltos del AAD:</Typography>
+                    <TextField
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={aadJumpsInput}
+                        onChange={(e) => setAadJumpsInput(e.target.value)}
+                    />
+                    <Box mt={2} display="flex" justifyContent="flex-end">
+                        <Button onClick={() => setUnmountDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={confirmUnmount} variant="contained" style={{marginLeft: 8}}>
+                            Confirmar
+                        </Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={mountDialogOpen} onClose={() => setMountDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Montar componente</DialogTitle>
+                <DialogContent>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel id="rig-select-label">Selecciona Rig</InputLabel>
+                        <Select
+                            labelId="rig-select-label"
+                            value={selectedRigId}
+                            label="Selecciona Rig"
+                            onChange={(e) => setSelectedRigId(e.target.value)}
+                        >
+                            {availableRigs.map((rig) => (
+                                <MenuItem key={rig.id} value={rig.id}>{rig.rig_number}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        label="AAD Jumps"
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={aadJumpsInput}
+                        onChange={(e) => setAadJumpsInput(e.target.value)}
+                    />
+                    <Box mt={2} display="flex" justifyContent="flex-end">
+                        <Button onClick={() => setMountDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={confirmMount} variant="contained" style={{marginLeft: 8}}>
+                            Montar
+                        </Button>
+                    </Box>
                 </DialogContent>
             </Dialog>
         </div>

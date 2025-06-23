@@ -1,6 +1,6 @@
-import {Chip} from "@mui/material";
+import {Chip, Button} from "@mui/material";
 
-export const getComponentColumns = (handleMountedClick) => [
+export const getComponentColumns = (handleMountedClick, handleUnmount, handleMount) => [
     {field: "id", headerName: "ID", width: 70},
     {field: "serial_number", headerName: "Serial Number", width: 150},
     {field: "component_type_name", headerName: "Component Type", width: 150},
@@ -26,7 +26,7 @@ export const getComponentColumns = (handleMountedClick) => [
                             clickable
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleMountedClick(r.id); // ✅ ahora funciona directo
+                                handleMountedClick(r.id);
                             }}
                             sx={{mr: 0.5, mb: 0.5}}
                         />
@@ -34,6 +34,32 @@ export const getComponentColumns = (handleMountedClick) => [
                 </>
             ) : (
                 ""
+            );
+        },
+    },
+    {
+        field: "actions",
+        headerName: "Actions",
+        width: 140,
+        renderCell: (params) => {
+            const component = params.row;
+            const isMounted = component.rigs && component.rigs.length > 0;
+            return (
+                <Button
+                    variant="contained"
+                    size="small"
+                    color={isMounted ? "warning" : "success"}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (isMounted) {
+                            handleUnmount(component);
+                        } else {
+                            handleMount(component);
+                        }
+                    }}
+                >
+                    {isMounted ? "Umount" : "Mount"}
+                </Button>
             );
         },
     },

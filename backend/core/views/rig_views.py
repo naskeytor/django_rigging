@@ -8,15 +8,22 @@ from core.serializers import RigSerializer, RigWriteSerializer, RigSummarySerial
 
 
 class RigViewSet(viewsets.ModelViewSet):
-    queryset = Rig.objects.all()
+    queryset = Rig.objects.all().prefetch_related(
+        "components__model",
+        "components__size",
+        "components__component_type",
+        "components__status"
+    )
     permission_classes = [AllowAny] #[IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == 'retrieve' and self.request.query_params.get("summary") == "1":
             return RigSummarySerializer
+        if self.action == 'list' and self.request.query_params.get("summary") == "1":
+            return RigSummarySerializer
         if self.action in ['create', 'update', 'partial_update']:
             return RigWriteSerializer
-        return RigSerializer
+        return RigSerializer  # ✅ incluir componentes siempre
 
     @action(detail=True, methods=["patch"], url_path="update-aad-jumps")
     def update_aad_jumps(self, request, pk=None):
@@ -29,10 +36,10 @@ class RigViewSet(viewsets.ModelViewSet):
         rig.update_aad_jumps(new_value)
         return Response({"status": "updated", "new_value": new_value})
 
-    def list(self, request, *args, **kwargs):
+    """def list(self, request, *args, **kwargs):
         # 🔹 Forzar uso de RigSerializer con componentes serializados
         self.serializer_class = RigSerializer
-        return super().list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)"""
 
     def create(self, request, *args, **kwargs):
         rig_number = request.data.get("rig_number", "").strip()

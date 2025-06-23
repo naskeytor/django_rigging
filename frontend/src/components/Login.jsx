@@ -44,6 +44,10 @@ const Login = () => {
 
             sessionStorage.setItem("role", group);
             sessionStorage.setItem("accessToken", access);
+
+            sessionStorage.setItem("accessToken", access);
+            console.log("🪪 Access token guardado:", access);
+
             sessionStorage.setItem("refreshToken", refresh);
             sessionStorage.setItem("username", user.username || "Usuario");
             sessionStorage.setItem("email", user.email || "user@example.com");
