@@ -123,10 +123,11 @@ class Rig(models.Model):
             comp_type = comp.component_type.component_type.lower()
             if comp_type in ["canopy", "container"]:
                 comp.jumps = (comp.jumps or 0) + diff
+                comp.aad_jumps_on_mount = new_value
                 comp.save()
             elif comp_type == "aad":
                 # 🔹 Actualizar el campo aad_jumps_on_mount también
-                comp.jumps = new_value
+                comp.aad_jumps_on_mount = new_value
                 comp.save()
 
 

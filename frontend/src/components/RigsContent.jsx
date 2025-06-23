@@ -14,7 +14,7 @@ import {
     Select,
     MenuItem,
     IconButton,
-    Menu,
+    Menu, TextField,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
@@ -39,19 +39,44 @@ const columns = [
 
 const RigsContent = () => {
 
+
     const [anchorEl, setAnchorEl] = useState(null);
     const [actionRig, setActionRig] = useState(null);
     const [aadDialogOpen, setAadDialogOpen] = useState(false);
     const [riggingDialogOpen, setRiggingDialogOpen] = useState(false);
+    const [aadJumpInput, setAadJumpInput] = useState("");
+
+    const handleAadUpdateSave = async () => {
+        if (!actionRig) return;
+
+        const token = sessionStorage.getItem("accessToken");
+        const headers = {Authorization: `Bearer ${token}`};
+
+        try {
+            // Llamamos a tu endpoint personalizado en Django
+            await axios.patch(
+                `http://localhost:8000/api/rigs/${actionRig.id}/update-aad-jumps/`,
+                {new_value: parseInt(aadJumpInput, 10)},
+                {headers}
+            );
+
+            await fetchRigs(); // refrescar tabla completa
+        } catch (err) {
+            console.error("❌ Error al actualizar AAD jumps:", err);
+        } finally {
+            setAadDialogOpen(false);
+            setActionRig(null);
+        }
+    }
 
 
     const handleMenuOpen = (event, rig) => {
+        console.log("🔍 Menu opened for rig:", rig);
         setAnchorEl(event.currentTarget);
         setActionRig(rig);
     };
     const handleMenuClose = () => {
         setAnchorEl(null);
-        setActionRig(null);
     };
 
     const [rows, setRows] = useState([]);
@@ -76,7 +101,8 @@ const RigsContent = () => {
         const headers = {Authorization: `Bearer ${token}`};
 
         try {
-            const res = await axios.get("http://localhost:8000/api/rigs/?summary=1", {headers});
+            // ❗ SIN summary=1 para que devuelva los componentes
+            const res = await axios.get("http://localhost:8000/api/rigs/", {headers});
             setRows(res.data);
         } catch (err) {
             console.error("❌ Error al recargar rigs:", err);
@@ -253,16 +279,16 @@ const RigsContent = () => {
             renderCell: renderComponentCell("aad_label", "aad_id", "AAD"),
         },
         {
-        field: "actions",
-        headerName: "Actions",
-        width: 150,
-        sortable: false,
-        renderCell: (params) => (
-            <IconButton onClick={(e) => handleMenuOpen(e, params.row)}>
-                <MoreVertIcon />
-            </IconButton>
-        ),
-    },
+            field: "actions",
+            headerName: "Actions",
+            width: 150,
+            sortable: false,
+            renderCell: (params) => (
+                <IconButton onClick={(e) => handleMenuOpen(e, params.row)}>
+                    <MoreVertIcon/>
+                </IconButton>
+            ),
+        },
     ];
 
     const availableComponents = components.filter(c =>
@@ -418,8 +444,9 @@ const RigsContent = () => {
             >
                 <MenuItem
                     onClick={() => {
+                        setAadJumpInput(actionRig?.current_aad_jumps?.toString() || "");
                         setAadDialogOpen(true);
-                        handleMenuClose();
+                        setAnchorEl(null); // solo cierra el menú, no limpies actionRig
                     }}
                 >
                     Update AAD Jumps
@@ -434,13 +461,32 @@ const RigsContent = () => {
                 </MenuItem>
             </Menu>
 
-            <Dialog open={aadDialogOpen} onClose={() => setAadDialogOpen(false)} maxWidth="xs" fullWidth>
+            <Dialog
+                open={aadDialogOpen}
+                onClose={() => {
+                    setAadDialogOpen(false);
+                    setActionRig(null);
+                }}
+                maxWidth="xs"
+                fullWidth
+            >
                 <DialogTitle>Update AAD Jumps</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" gutterBottom>
                         Rig: {actionRig?.rig_number}
                     </Typography>
-                    {/* Aquí después pondremos input y botón */}
+                    <Box mt={2} display="flex" flexDirection="column" gap={2}>
+                        <TextField
+                            label="AAD Jumps"
+                            type="number"
+                            fullWidth
+                            value={aadJumpInput}
+                            onChange={(e) => setAadJumpInput(e.target.value)}
+                        />
+                        <Button variant="contained" onClick={handleAadUpdateSave}>
+                            Save
+                        </Button>
+                    </Box>
                 </DialogContent>
             </Dialog>
 
