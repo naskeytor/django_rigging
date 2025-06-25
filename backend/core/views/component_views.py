@@ -65,23 +65,47 @@ class ComponentViewSet(viewsets.ModelViewSet):
             return Response({"error": "rig_id and aad_jumps are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            aad_jumps = int(aad_jumps)
+        except ValueError:
+            return Response({"error": "aad_jumps must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
             rig = Rig.objects.get(id=rig_id)
         except Rig.DoesNotExist:
             return Response({"error": "Rig not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        component.rigs.add(rig)
+        ctype = component.component_type.component_type
 
-        if component.component_type.component_type == "AAD":
-            # ✅ AAD: actualiza todos los componentes montados, excepto RESERVE
-            for c in rig.components.all():
-                if c.component_type.component_type != "Reserve":
-                    c.aad_jumps_on_mount = aad_jumps
-                    c.save()
-        elif component.component_type.component_type != "Reserve":
-            component.aad_jumps_on_mount = aad_jumps
+        # ✅ Paso 2: RESERVE — solo vincular
+        if ctype == "Reserve":
+            component.rigs.add(rig)
+            component.save()
+            serializer = self.get_serializer(component)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ✅ Paso 3: AAD
+        if ctype == "AAD":
+            component.rigs.add(rig)
             component.save()
 
-        return Response({"message": "Component successfully mounted"}, status=status.HTTP_200_OK)
+            for c in rig.components.all():
+                if c.component_type.component_type in ["Canopy", "Container"]:
+                    c.aad_jumps_on_mount = aad_jumps
+                    c.save()
+
+            serializer = self.get_serializer(component)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ✅ Paso 4: Canopy o Container
+        if ctype in ["Canopy", "Container"]:
+            component.aad_jumps_on_mount = aad_jumps
+            component.rigs.add(rig)
+            component.save()
+
+            serializer = self.get_serializer(component)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response({"error": "Unsupported component type"}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def umount(self, request, pk=None):
@@ -92,22 +116,60 @@ class ComponentViewSet(viewsets.ModelViewSet):
         if aad_jumps is None:
             return Response({"error": "aad_jumps is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        rigs = component.rigs.all()
+        try:
+            aad_jumps = int(aad_jumps)
+        except ValueError:
+            return Response({"error": "aad_jumps must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
 
-        for rig in rigs:
-            # ✅ Actualizamos TODOS los componentes del rig excepto Reserve
-            for c in rig.components.all():
-                if c.component_type.component_type == "Reserve":
-                    continue
+        # Si no está montado, no hay nada que hacer
+        if not component.rigs.exists():
+            return Response({"error": "Component is not mounted to any rig"}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Calcular diferencia
-                if c.aad_jumps_on_mount is not None:
-                    diff = int(aad_jumps) - int(c.aad_jumps_on_mount or 0)
-                    c.jumps = (c.jumps or 0) + max(diff, 0)
-                    c.save()
+        ctype = component.component_type.component_type
 
-        # ✅ Quitar el rig al componente desmontado
-        component.rigs.clear()
-        component.save()
+        # ✅ Si es RESERVE: simplemente desvincular
+        if ctype == "Reserve":
+            component.rigs.clear()
+            component.save()
+            serializer = self.get_serializer(component)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response({"message": "Component successfully unmounted"}, status=status.HTTP_200_OK)
+        # ✅ Si es AAD
+        if ctype == "AAD":
+            for rig in component.rigs.all():
+                for c in rig.components.all():
+                    if c.id == component.id or c.component_type.component_type == "Reserve":
+                        continue
+                    if c.aad_jumps_on_mount is not None:
+                        diff = aad_jumps - int(c.aad_jumps_on_mount or 0)
+                        c.jumps = (c.jumps or 0) + max(diff, 0)
+                        c.aad_jumps_on_mount = 0
+                        c.save()
+
+            component.jumps = aad_jumps
+            component.aad_jumps_on_mount = 0
+            component.rigs.clear()
+            component.save()
+
+            serializer = self.get_serializer(component)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ✅ Si es Canopy o Container
+        if ctype in ["Canopy", "Container"]:
+            for rig in component.rigs.all():
+                for c in rig.components.all():
+                    if c.component_type.component_type == "Reserve":
+                        continue
+                    if c.aad_jumps_on_mount is not None:
+                        diff = aad_jumps - int(c.aad_jumps_on_mount or 0)
+                        c.jumps = (c.jumps or 0) + max(diff, 0)
+                        c.aad_jumps_on_mount = aad_jumps
+                        c.save()
+
+            component.rigs.clear()
+            component.save()
+
+            serializer = self.get_serializer(component)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response({"error": "Unsupported component type"}, status=status.HTTP_400_BAD_REQUEST)
