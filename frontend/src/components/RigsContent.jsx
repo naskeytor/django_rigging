@@ -177,26 +177,23 @@ const RigsContent = () => {
         const headers = {Authorization: `Bearer ${token}`};
 
         try {
-            const rig = rows.find(r => r.id === assignTarget.rigId);
-            const updatedComponents = [
-                rig.components.find(c => c.component_type_name === "Canopy")?.id,
-                rig.components.find(c => c.component_type_name === "Container")?.id,
-                rig.components.find(c => c.component_type_name === "Reserve")?.id,
-                rig.components.find(c => c.component_type_name === "AAD")?.id,
-                selectedAvailableComponentId,
-            ].filter(Boolean);
+            const componentId = selectedAvailableComponentId;
+            const component = components.find(c => c.id === componentId);
+            const isAADorRelated = ["AAD", "Canopy", "Container"].includes(component.component_type_name);
 
-            await axios.put(`http://localhost:8000/api/rigs/${assignTarget.rigId}/`, {
-                rig_number: rig.rig_number,
-                current_aad_jumps: rig.current_aad_jumps,
-                components: updatedComponents,
-            }, {headers});
+            const payload = {
+                rig_id: assignTarget.rigId,
+                aad_jumps: isAADorRelated ? parseInt(aadJumpInput, 10) : 0,
+            };
+
+            await axios.post(`http://localhost:8000/api/components/${componentId}/mount/`, payload, {headers});
 
             await fetchRigs();
         } catch (err) {
-            console.error("❌ Error al asignar componente:", err);
+            console.error("❌ Error al montar componente:", err);
         } finally {
             setAssignDialogOpen(false);
+            setAadJumpInput(""); // limpiar input
         }
     };
 
@@ -403,17 +400,33 @@ const RigsContent = () => {
                             ))}
                         </Select>
                     </FormControl>
+
+                    {["AAD", "Canopy", "Container"].includes(assignTarget?.componentType) && (
+                        <TextField
+                            label="AAD Jumps"
+                            type="number"
+                            fullWidth
+                            margin="normal"
+                            value={aadJumpInput}
+                            onChange={(e) => setAadJumpInput(e.target.value)}
+                        />
+                    )}
+
                     <Box mt={2} textAlign="right">
                         <Button onClick={() => setAssignDialogOpen(false)} style={{marginRight: 8}}>
                             Cancelar
                         </Button>
-                        <Button variant="contained" onClick={handleAssignConfirm}
-                                disabled={!selectedAvailableComponentId}>
+                        <Button
+                            variant="contained"
+                            onClick={handleAssignConfirm}
+                            disabled={!selectedAvailableComponentId || (["AAD", "Canopy", "Container"].includes(assignTarget?.componentType) && !aadJumpInput)}
+                        >
                             Confirmar
                         </Button>
                     </Box>
                 </DialogContent>
             </Dialog>
+
 
             <Dialog open={Boolean(rigInfo)} onClose={() => setRigInfo(null)} maxWidth="sm" fullWidth>
                 <DialogTitle>Rig Details</DialogTitle>

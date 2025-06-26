@@ -85,6 +85,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
 
         # ✅ Paso 3: AAD
         if ctype == "AAD":
+            component.jumps = aad_jumps
             component.rigs.add(rig)
             component.save()
 
