@@ -46,6 +46,11 @@ const RigsContent = () => {
     const [riggingDialogOpen, setRiggingDialogOpen] = useState(false);
     const [aadJumpInput, setAadJumpInput] = useState("");
 
+    const [unmountDialogOpen, setUnmountDialogOpen] = useState(false);
+    const [unmountComponentId, setUnmountComponentId] = useState(null);
+    const [unmountRigId, setUnmountRigId] = useState(null);
+    const [unmountAadJumps, setUnmountAadJumps] = useState("");
+
     const handleAadUpdateSave = async () => {
         if (!actionRig) return;
 
@@ -106,6 +111,22 @@ const RigsContent = () => {
             setRows(res.data);
         } catch (err) {
             console.error("❌ Error al recargar rigs:", err);
+        }
+    };
+
+    const fetchRigsAndComponents = async () => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = {Authorization: `Bearer ${token}`};
+
+        try {
+            const [rigsRes, componentsRes] = await Promise.all([
+                axios.get("http://localhost:8000/api/rigs/", {headers}),
+                axios.get("http://localhost:8000/api/components/", {headers}),
+            ]);
+            setRows(rigsRes.data);
+            setComponents(componentsRes.data);
+        } catch (err) {
+            console.error("❌ Error al recargar rigs y componentes:", err);
         }
     };
 
@@ -292,6 +313,44 @@ const RigsContent = () => {
         c.component_type_name === assignTarget?.componentType && (!c.rigs || c.rigs.length === 0)
     );
 
+    const handleUnmountComponent = (componentId, rigId) => {
+        setUnmountComponentId(componentId);
+        setUnmountRigId(rigId);
+        setUnmountAadJumps("");
+        setUnmountDialogOpen(true);
+    };
+
+    const confirmUnmount = async () => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = {Authorization: `Bearer ${token}`};
+
+        try {
+            await axios.post(
+                `http://localhost:8000/api/components/${unmountComponentId}/umount/`,
+                {aad_jumps: parseInt(unmountAadJumps, 10)},
+                {headers}
+            );
+
+            // ✅ Refresca rigs para ver la tabla actualizada
+            await fetchRigs();
+
+            // ✅ Opcional: actualiza components si tu UI lo requiere en otras partes
+            const resComponents = await axios.get("http://localhost:8000/api/components/", {headers});
+            setComponents(resComponents.data);
+
+            setSelectedComponent(null);
+            setComponentMode("view");
+            setRigInfo(null);
+        } catch (err) {
+            console.error("❌ Error al desmontar componente:", err);
+        } finally {
+            setUnmountDialogOpen(false);
+            setUnmountComponentId(null);
+            setUnmountRigId(null);
+            setUnmountAadJumps("");
+        }
+    };
+
     return (
 
         <>
@@ -380,6 +439,7 @@ const RigsContent = () => {
                             await fetchRigs();
                             setSelectedComponent(null);
                         }}
+                        onUnmount={handleUnmountComponent}
                     />
                 </DialogContent>
             </Dialog>
@@ -512,6 +572,37 @@ const RigsContent = () => {
                     {/* Aquí después pondremos formulario futuro */}
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={unmountDialogOpen} onClose={() => setUnmountDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Desmontar Componente</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" gutterBottom>
+                        Ingresa el número de AAD Jumps antes de desmontar
+                    </Typography>
+                    <TextField
+                        label="AAD Jumps"
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={unmountAadJumps}
+                        onChange={(e) => setUnmountAadJumps(e.target.value)}
+                    />
+                    <Box mt={2} textAlign="right">
+                        <Button onClick={() => setUnmountDialogOpen(false)} style={{marginRight: 8}}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            onClick={confirmUnmount}
+                            disabled={!unmountAadJumps}
+                        >
+                            Desmontar
+                        </Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
         </>
     );
 };

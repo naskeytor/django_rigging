@@ -9,28 +9,31 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem,
+    MenuItem, Dialog, DialogTitle, DialogContent,
 } from "@mui/material";
 import axios from "axios";
 
 const RecordForm = ({
-    mode = "view",
-    data = {},
-    onSave,
-    onCancel,
-    onEdit,
-    onDelete,
-    entityType,
-    extraOptions = {},
-    isMounted,
-    onMount,
-    onUnmount,
-    currentRigId,
-}) => {
+                        mode = "view",
+                        data = {},
+                        onSave,
+                        onCancel,
+                        onEdit,
+                        onDelete,
+                        entityType,
+                        extraOptions = {},
+                        isMounted,
+                        onMount,
+                        onUnmount,
+                        currentRigId,
+                    }) => {
     const [formData, setFormData] = useState({});
     const [manufacturerOptions, setManufacturerOptions] = useState([]);
 
     const isViewMode = mode === "view";
+
+    const [unmountDialogOpen, setUnmountDialogOpen] = useState(false);
+    const [aadJumpsOnUnmount, setAadJumpsOnUnmount] = useState("");
 
     useEffect(() => {
         if (entityType === "model") {
@@ -41,7 +44,7 @@ const RecordForm = ({
             }
             axios
                 .get("http://localhost:8000/api/manufacturers/", {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {Authorization: `Bearer ${token}`},
                 })
                 .then((res) => setManufacturerOptions(res.data))
                 .catch((err) => console.error("❌ Error al cargar fabricantes:", err));
@@ -50,7 +53,7 @@ const RecordForm = ({
 
     useEffect(() => {
         if (!data) return;
-        let patchedData = { ...data };
+        let patchedData = {...data};
 
         if (
             entityType === "model" &&
@@ -74,13 +77,13 @@ const RecordForm = ({
     }, [data, entityType, manufacturerOptions]);
 
     const handleChange = (field) => (e) => {
-        setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+        setFormData((prev) => ({...prev, [field]: e.target.value}));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (onSave) {
-            const payload = { ...formData };
+            const payload = {...formData};
             if (entityType === "rig") {
                 payload.components = [
                     formData.canopy,
@@ -111,7 +114,7 @@ const RecordForm = ({
                 <Select labelId="model-label" value={formData.model || ""} onChange={handleChange("model")}
                         label="Model">
                     {extraOptions?.models?.map((opt) => <MenuItem key={opt.id}
-                                                                 value={opt.id}>{opt.name}</MenuItem>)}
+                                                                  value={opt.id}>{opt.name}</MenuItem>)}
                 </Select>
             </FormControl>
             <FormControl fullWidth margin="normal" disabled={isViewMode}>
@@ -119,7 +122,7 @@ const RecordForm = ({
                 <Select labelId="size-label" value={formData.size || ""} onChange={handleChange("size")}
                         label="Size">
                     {extraOptions?.sizes?.map((opt) => <MenuItem key={opt.id}
-                                                                value={opt.id}>{opt.size}</MenuItem>)}
+                                                                 value={opt.id}>{opt.size}</MenuItem>)}
                 </Select>
             </FormControl>
             <FormControl fullWidth margin="normal" disabled={isViewMode}>
@@ -127,7 +130,7 @@ const RecordForm = ({
                 <Select labelId="status-label" value={formData.status || ""}
                         onChange={handleChange("status")} label="Status">
                     {extraOptions?.statuses?.map((opt) => <MenuItem key={opt.id}
-                                                                   value={opt.id}>{opt.status}</MenuItem>)}
+                                                                    value={opt.id}>{opt.status}</MenuItem>)}
                 </Select>
             </FormControl>
             <TextField label="Date of Manufacture" type="date" value={formData.dom || ""}
@@ -142,7 +145,7 @@ const RecordForm = ({
     );
 
     return (
-        <Paper elevation={4} sx={{ p: 4, borderRadius: 3, maxWidth: 600, mx: "auto" }}>
+        <Paper elevation={4} sx={{p: 4, borderRadius: 3, maxWidth: 600, mx: "auto"}}>
             <Typography variant="h6" gutterBottom>
                 {mode === "create" ? "Crear Registro" : mode === "edit" ? "Editar Registro" : "Detalle del Registro"}
             </Typography>
@@ -157,7 +160,7 @@ const RecordForm = ({
                                 <Button
                                     variant="contained"
                                     color="warning"
-                                    onClick={() => onUnmount && onUnmount(data.id, currentRigId)}
+                                    onClick={() => setUnmountDialogOpen(true)}
                                 >
                                     Desmontar
                                 </Button>
@@ -182,6 +185,56 @@ const RecordForm = ({
                     </Stack>
                 )}
             </Box>
+            <Dialog open={unmountDialogOpen} onClose={() => setUnmountDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Desmontar Componente</DialogTitle>
+                <DialogContent>
+                    <Typography gutterBottom>
+                        Ingresa el número actual de AAD Jumps para completar el desmontaje.
+                    </Typography>
+                    <TextField
+                        label="AAD Jumps"
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={aadJumpsOnUnmount}
+                        onChange={(e) => setAadJumpsOnUnmount(e.target.value)}
+                    />
+                    <Box mt={2} textAlign="right">
+                        <Button onClick={() => setUnmountDialogOpen(false)} style={{marginRight: 8}}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            onClick={async () => {
+                                const token = sessionStorage.getItem("accessToken");
+                                const headers = {Authorization: `Bearer ${token}`};
+
+                                try {
+                                    await axios.post(
+                                        `http://localhost:8000/api/components/${data.id}/umount/`,
+                                        {aad_jumps: parseInt(aadJumpsOnUnmount, 10)},
+                                        {headers}
+                                    );
+
+                                    if (onUnmount) {
+                                        onUnmount(data.id, currentRigId);  // Refrescar padre
+                                    }
+
+                                    setUnmountDialogOpen(false);
+                                    onCancel(); // Cierra modal principal
+                                } catch (err) {
+                                    console.error("❌ Error desmontando:", err);
+                                }
+                            }}
+                            disabled={!aadJumpsOnUnmount}
+                        >
+                            Confirmar
+                        </Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
         </Paper>
     );
 };
