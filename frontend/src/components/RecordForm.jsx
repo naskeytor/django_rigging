@@ -218,7 +218,7 @@ const RecordForm = ({
                                     );
 
                                     if (onUnmount) {
-                                        onUnmount(data.id, currentRigId);  // Refrescar padre
+                                        await onUnmount(); // Refresca en el padre
                                     }
 
                                     setUnmountDialogOpen(false);
