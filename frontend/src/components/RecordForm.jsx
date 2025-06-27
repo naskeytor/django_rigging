@@ -26,6 +26,7 @@ const RecordForm = ({
                         onMount,
                         onUnmount,
                         currentRigId,
+                        hideMountActions = false,
                     }) => {
     const [formData, setFormData] = useState({});
     const [manufacturerOptions, setManufacturerOptions] = useState([]);
@@ -155,7 +156,7 @@ const RecordForm = ({
                     <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
                         <Button variant="outlined" onClick={onCancel}>Cerrar</Button>
 
-                        {entityType === "component" && (
+                        {entityType === "component" && !hideMountActions && (
                             isMounted ? (
                                 <Button
                                     variant="contained"

@@ -3,6 +3,7 @@ import React, {useEffect, useState, useMemo} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
 import {getComponentColumns} from "../config/componentTableConfig";
+import RecordForm from "../components/RecordForm";
 import {
     Dialog,
     DialogTitle,
@@ -224,6 +225,7 @@ const ComponentsContent = () => {
                 onDelete={handleDelete}
                 extraOptions={options}
                 componentProps={{onMount: handleMount, onUnmount: handleUnmount}}
+                hideMountActions={true} // 👈 AQUÍ
             />
 
             <Dialog open={rigDetailsOpen} onClose={() => setRigDetailsOpen(false)} maxWidth="sm" fullWidth>
@@ -292,6 +294,26 @@ const ComponentsContent = () => {
                     </Box>
                 </DialogContent>
             </Dialog>
+
+            <Dialog
+                open={Boolean(selectedComponent)}
+                onClose={() => setSelectedComponent(null)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Detalle del Componente</DialogTitle>
+                <DialogContent>
+                    <RecordForm
+                        data={selectedComponent}
+                        mode="view"
+                        entityType="component"
+                        extraOptions={options}
+                        onCancel={() => setSelectedComponent(null)}
+                        hideMountActions={true} // 👈 aquí ocultas los botones
+                    />
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };

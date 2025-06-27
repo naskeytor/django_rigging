@@ -23,6 +23,7 @@ const CustomTable = ({
                          extraOptions,
                          disableRowClick = false,
                          componentProps = {}, // 🔹 se reciben funciones como handleMountedClick
+                         hideMountActions = false, // 👈 NUEVO
                      }) => {
     const [selectedRow, setSelectedRow] = React.useState(null);
     const [mode, setMode] = React.useState("view");
@@ -120,6 +121,7 @@ const CustomTable = ({
                         currentRigId={selectedRow?.currentRigId}
                         onMount={componentProps?.onMount}
                         onUnmount={componentProps?.onUnmount}
+                        hideMountActions={hideMountActions} // 👈 AQUÍ
                     />
                 </DialogContent>
             </Dialog>
