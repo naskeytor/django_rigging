@@ -157,15 +157,14 @@ class ComponentViewSet(viewsets.ModelViewSet):
 
         # ✅ Si es Canopy o Container
         if ctype in ["Canopy", "Container"]:
+            # Calcula diferencia con el AAD
             for rig in component.rigs.all():
-                for c in rig.components.all():
-                    if c.component_type.component_type == "Reserve":
-                        continue
-                    if c.aad_jumps_on_mount is not None:
-                        diff = aad_jumps - int(c.aad_jumps_on_mount or 0)
-                        c.jumps = (c.jumps or 0) + max(diff, 0)
-                        c.aad_jumps_on_mount = aad_jumps
-                        c.save()
+                aad = rig.components.filter(component_type__component_type="AAD").first()
+                if aad:
+                    diff = aad_jumps - int(component.aad_jumps_on_mount or 0)
+                    component.jumps = (component.jumps or 0) + max(diff, 0)
+                    component.aad_jumps_on_mount = 0
+                    component.save()
 
             component.rigs.clear()
             component.save()

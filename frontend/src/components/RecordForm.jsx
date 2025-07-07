@@ -208,25 +208,11 @@ const RecordForm = ({
                             variant="contained"
                             color="warning"
                             onClick={async () => {
-                                const token = sessionStorage.getItem("accessToken");
-                                const headers = {Authorization: `Bearer ${token}`};
-
-                                try {
-                                    await axios.post(
-                                        `http://localhost:8000/api/components/${data.id}/umount/`,
-                                        {aad_jumps: parseInt(aadJumpsOnUnmount, 10)},
-                                        {headers}
-                                    );
-
-                                    if (onUnmount) {
-                                        await onUnmount(); // Refresca en el padre
-                                    }
-
-                                    setUnmountDialogOpen(false);
-                                    onCancel(); // Cierra modal principal
-                                } catch (err) {
-                                    console.error("❌ Error desmontando:", err);
+                                if (onUnmount) {
+                                    await onUnmount(data.id, aadJumpsOnUnmount); // pasa id y jumps al padre
                                 }
+                                setUnmountDialogOpen(false);
+                                onCancel(); // Cierra modal principal
                             }}
                             disabled={!aadJumpsOnUnmount}
                         >

@@ -267,7 +267,7 @@ const RigsContent = () => {
                 </Button>
             ),
         },
-        {field: "current_aad_jumps", headerName: "AAD Jumps", width: 150},
+        //{field: "current_aad_jumps", headerName: "AAD Jumps", width: 150},
         {
             field: "canopy_label",
             headerName: "Canopy",
@@ -308,6 +308,26 @@ const RigsContent = () => {
     const availableComponents = components.filter(c =>
         c.component_type_name === assignTarget?.componentType && (!c.rigs || c.rigs.length === 0)
     );
+
+    const handleUnmountComponent = async (componentId, aadJumps) => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = {Authorization: `Bearer ${token}`};
+
+        console.log("🛠️ desmontando:", componentId, aadJumps);
+
+        try {
+            await axios.post(
+                `http://localhost:8000/api/components/${componentId}/umount/`,
+                {aad_jumps: parseInt(aadJumps, 10)},
+                {headers}
+            );
+
+            await fetchRigsAndComponents(); // 🔄 refresca rigs + components
+            setSelectedComponent(null); // cierra el modal
+        } catch (err) {
+            console.error("❌ Error desmontando componente:", err);
+        }
+    };
 
 
     return (
@@ -398,9 +418,7 @@ const RigsContent = () => {
                             await fetchRigs();
                             setSelectedComponent(null);
                         }}
-                        onUnmount={async () => {
-                            await fetchRigsAndComponents(); // 🔄 Refresca tabla al desmontar
-                        }}
+                        onUnmount={handleUnmountComponent}
                     />
                 </DialogContent>
             </Dialog>

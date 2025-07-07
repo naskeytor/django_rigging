@@ -295,24 +295,7 @@ const ComponentsContent = () => {
                 </DialogContent>
             </Dialog>
 
-            <Dialog
-                open={Boolean(selectedComponent)}
-                onClose={() => setSelectedComponent(null)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>Detalle del Componente</DialogTitle>
-                <DialogContent>
-                    <RecordForm
-                        data={selectedComponent}
-                        mode="view"
-                        entityType="component"
-                        extraOptions={options}
-                        onCancel={() => setSelectedComponent(null)}
-                        hideMountActions={true} // 👈 aquí ocultas los botones
-                    />
-                </DialogContent>
-            </Dialog>
+
 
         </div>
     );
