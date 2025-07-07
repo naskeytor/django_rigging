@@ -97,6 +97,9 @@ class Component(models.Model):
     jumps = models.IntegerField(default=0)
     aad_jumps_on_mount = models.IntegerField(default=0)
 
+    packs = models.IntegerField(null=True, blank=True)
+    openings = models.IntegerField(null=True, blank=True)
+
 
     def __str__(self):
         return self.serial_number
@@ -127,7 +130,7 @@ class Rig(models.Model):
                 comp.save()
             elif comp_type == "aad":
                 # 🔹 Actualizar el campo aad_jumps_on_mount también
-                comp.aad_jumps_on_mount = new_value
+                comp.jumps = new_value
                 comp.save()
 
 

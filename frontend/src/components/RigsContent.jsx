@@ -186,6 +186,7 @@ const RigsContent = () => {
     const handleAssignClick = (rigId, componentType) => {
         setAssignTarget({rigId, componentType});
         setSelectedAvailableComponentId("");
+        setAadJumpInput("");
         setAssignDialogOpen(true);
     };
 

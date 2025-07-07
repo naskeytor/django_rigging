@@ -137,11 +137,52 @@ const RecordForm = ({
             <TextField label="Date of Manufacture" type="date" value={formData.dom || ""}
                        onChange={handleChange("dom")} fullWidth margin="normal"
                        InputLabelProps={{shrink: true}} disabled={isViewMode}/>
-            <TextField label="Jumps" type="number" value={formData.jumps || 0}
-                       onChange={handleChange("jumps")} fullWidth margin="normal" disabled={isViewMode}/>
-            <TextField label="AAD Jumps on Mount" type="number" value={formData.aad_jumps_on_mount || 0}
-                       onChange={handleChange("aad_jumps_on_mount")} fullWidth margin="normal"
-                       disabled={isViewMode}/>
+
+            {formData.component_type_name !== "Reserve" && (
+                <TextField
+                    label="Jumps"
+                    type="number"
+                    value={formData.jumps || 0}
+                    onChange={handleChange("jumps")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+
+            {formData.component_type_name !== "AAD" && formData.component_type_name !== "Reserve" && (
+                <TextField
+                    label="AAD Jumps on Mount"
+                    type="number"
+                    value={formData.aad_jumps_on_mount || 0}
+                    onChange={handleChange("aad_jumps_on_mount")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+            {formData.component_type_name === "Reserve" && (
+                <>
+                    <TextField
+                        label="Packs"
+                        type="number"
+                        value={formData.packs || ""}
+                        onChange={handleChange("packs")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+                    <TextField
+                        label="Openings"
+                        type="number"
+                        value={formData.openings || ""}
+                        onChange={handleChange("openings")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+                </>
+            )}
         </>
     );
 
