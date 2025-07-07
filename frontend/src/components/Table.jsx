@@ -23,11 +23,13 @@ const CustomTable = ({
                          extraOptions,
                          disableRowClick = false,
                          componentProps = {}, // 🔹 se reciben funciones como handleMountedClick
+                         hideMountActions = false, // 👈 NUEVO
                      }) => {
     const [selectedRow, setSelectedRow] = React.useState(null);
     const [mode, setMode] = React.useState("view");
 
     const handleRowClick = (params) => {
+        console.log("✅ handleRowClick llamado con", params);
         if (disableRowClick) return;
         setSelectedRow(params.row);
         setMode("view");
@@ -78,7 +80,19 @@ const CustomTable = ({
                     initialState={{pagination: {paginationModel: {pageSize: 10}}}}
                     disableRowSelectionOnClick
                     onRowClick={(params, event) => {
+                        const target = event.target;
+
+                        // Detecta clicks en buttons o dentro de buttons y evita abrir el modal de fila
+                        const isButtonClick = event.target.closest("button") !== null;
+
+                        if (isButtonClick) {
+                            console.log("🔴 Click en botón detectado, ignorando row click.");
+                            return;
+                        }
+
                         if (params.field === "mounted") return; // ❌ no abrir modal del componente
+
+                        console.log("✅ Opening row modal for:", params.row);
                         handleRowClick(params);
                     }}
                     autoHeight
@@ -120,6 +134,7 @@ const CustomTable = ({
                         currentRigId={selectedRow?.currentRigId}
                         onMount={componentProps?.onMount}
                         onUnmount={componentProps?.onUnmount}
+                        hideMountActions={hideMountActions} // 👈 AQUÍ
                     />
                 </DialogContent>
             </Dialog>

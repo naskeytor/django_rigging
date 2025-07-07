@@ -46,6 +46,7 @@ const RigsContent = () => {
     const [riggingDialogOpen, setRiggingDialogOpen] = useState(false);
     const [aadJumpInput, setAadJumpInput] = useState("");
 
+
     const handleAadUpdateSave = async () => {
         if (!actionRig) return;
 
@@ -109,6 +110,22 @@ const RigsContent = () => {
         }
     };
 
+    const fetchRigsAndComponents = async () => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = {Authorization: `Bearer ${token}`};
+
+        try {
+            const [rigsRes, componentsRes] = await Promise.all([
+                axios.get("http://localhost:8000/api/rigs/", {headers}),
+                axios.get("http://localhost:8000/api/components/", {headers}),
+            ]);
+            setRows(rigsRes.data);
+            setComponents(componentsRes.data);
+        } catch (err) {
+            console.error("❌ Error al recargar rigs y componentes:", err);
+        }
+    };
+
     useEffect(() => {
         const token = sessionStorage.getItem("accessToken");
         const headers = {Authorization: `Bearer ${token}`};
@@ -169,6 +186,7 @@ const RigsContent = () => {
     const handleAssignClick = (rigId, componentType) => {
         setAssignTarget({rigId, componentType});
         setSelectedAvailableComponentId("");
+        setAadJumpInput("");
         setAssignDialogOpen(true);
     };
 
@@ -177,26 +195,23 @@ const RigsContent = () => {
         const headers = {Authorization: `Bearer ${token}`};
 
         try {
-            const rig = rows.find(r => r.id === assignTarget.rigId);
-            const updatedComponents = [
-                rig.components.find(c => c.component_type_name === "Canopy")?.id,
-                rig.components.find(c => c.component_type_name === "Container")?.id,
-                rig.components.find(c => c.component_type_name === "Reserve")?.id,
-                rig.components.find(c => c.component_type_name === "AAD")?.id,
-                selectedAvailableComponentId,
-            ].filter(Boolean);
+            const componentId = selectedAvailableComponentId;
+            const component = components.find(c => c.id === componentId);
+            const isAADorRelated = ["AAD", "Canopy", "Container"].includes(component.component_type_name);
 
-            await axios.put(`http://localhost:8000/api/rigs/${assignTarget.rigId}/`, {
-                rig_number: rig.rig_number,
-                current_aad_jumps: rig.current_aad_jumps,
-                components: updatedComponents,
-            }, {headers});
+            const payload = {
+                rig_id: assignTarget.rigId,
+                aad_jumps: isAADorRelated ? parseInt(aadJumpInput, 10) : 0,
+            };
+
+            await axios.post(`http://localhost:8000/api/components/${componentId}/mount/`, payload, {headers});
 
             await fetchRigs();
         } catch (err) {
-            console.error("❌ Error al asignar componente:", err);
+            console.error("❌ Error al montar componente:", err);
         } finally {
             setAssignDialogOpen(false);
+            setAadJumpInput(""); // limpiar input
         }
     };
 
@@ -253,7 +268,7 @@ const RigsContent = () => {
                 </Button>
             ),
         },
-        {field: "current_aad_jumps", headerName: "AAD Jumps", width: 150},
+        //{field: "current_aad_jumps", headerName: "AAD Jumps", width: 150},
         {
             field: "canopy_label",
             headerName: "Canopy",
@@ -294,6 +309,27 @@ const RigsContent = () => {
     const availableComponents = components.filter(c =>
         c.component_type_name === assignTarget?.componentType && (!c.rigs || c.rigs.length === 0)
     );
+
+    const handleUnmountComponent = async (componentId, aadJumps) => {
+        const token = sessionStorage.getItem("accessToken");
+        const headers = {Authorization: `Bearer ${token}`};
+
+        console.log("🛠️ desmontando:", componentId, aadJumps);
+
+        try {
+            await axios.post(
+                `http://localhost:8000/api/components/${componentId}/umount/`,
+                {aad_jumps: parseInt(aadJumps, 10)},
+                {headers}
+            );
+
+            await fetchRigsAndComponents(); // 🔄 refresca rigs + components
+            setSelectedComponent(null); // cierra el modal
+        } catch (err) {
+            console.error("❌ Error desmontando componente:", err);
+        }
+    };
+
 
     return (
 
@@ -383,6 +419,7 @@ const RigsContent = () => {
                             await fetchRigs();
                             setSelectedComponent(null);
                         }}
+                        onUnmount={handleUnmountComponent}
                     />
                 </DialogContent>
             </Dialog>
@@ -403,17 +440,33 @@ const RigsContent = () => {
                             ))}
                         </Select>
                     </FormControl>
+
+                    {["AAD", "Canopy", "Container"].includes(assignTarget?.componentType) && (
+                        <TextField
+                            label="AAD Jumps"
+                            type="number"
+                            fullWidth
+                            margin="normal"
+                            value={aadJumpInput}
+                            onChange={(e) => setAadJumpInput(e.target.value)}
+                        />
+                    )}
+
                     <Box mt={2} textAlign="right">
                         <Button onClick={() => setAssignDialogOpen(false)} style={{marginRight: 8}}>
                             Cancelar
                         </Button>
-                        <Button variant="contained" onClick={handleAssignConfirm}
-                                disabled={!selectedAvailableComponentId}>
+                        <Button
+                            variant="contained"
+                            onClick={handleAssignConfirm}
+                            disabled={!selectedAvailableComponentId || (["AAD", "Canopy", "Container"].includes(assignTarget?.componentType) && !aadJumpInput)}
+                        >
                             Confirmar
                         </Button>
                     </Box>
                 </DialogContent>
             </Dialog>
+
 
             <Dialog open={Boolean(rigInfo)} onClose={() => setRigInfo(null)} maxWidth="sm" fullWidth>
                 <DialogTitle>Rig Details</DialogTitle>
@@ -499,6 +552,8 @@ const RigsContent = () => {
                     {/* Aquí después pondremos formulario futuro */}
                 </DialogContent>
             </Dialog>
+
+
         </>
     );
 };

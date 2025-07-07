@@ -50,12 +50,18 @@ export const getComponentColumns = (handleMountedClick, handleUnmount, handleMou
                     size="small"
                     color={isMounted ? "warning" : "success"}
                     onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
+                        e.nativeEvent.stopImmediatePropagation();
                         if (isMounted) {
                             handleUnmount(component);
                         } else {
                             handleMount(component);
                         }
+                    }}
+                    onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.nativeEvent.stopImmediatePropagation();
                     }}
                 >
                     {isMounted ? "Umount" : "Mount"}

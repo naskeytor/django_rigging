@@ -9,28 +9,32 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem,
+    MenuItem, Dialog, DialogTitle, DialogContent,
 } from "@mui/material";
 import axios from "axios";
 
 const RecordForm = ({
-    mode = "view",
-    data = {},
-    onSave,
-    onCancel,
-    onEdit,
-    onDelete,
-    entityType,
-    extraOptions = {},
-    isMounted,
-    onMount,
-    onUnmount,
-    currentRigId,
-}) => {
+                        mode = "view",
+                        data = {},
+                        onSave,
+                        onCancel,
+                        onEdit,
+                        onDelete,
+                        entityType,
+                        extraOptions = {},
+                        isMounted,
+                        onMount,
+                        onUnmount,
+                        currentRigId,
+                        hideMountActions = false,
+                    }) => {
     const [formData, setFormData] = useState({});
     const [manufacturerOptions, setManufacturerOptions] = useState([]);
 
     const isViewMode = mode === "view";
+
+    const [unmountDialogOpen, setUnmountDialogOpen] = useState(false);
+    const [aadJumpsOnUnmount, setAadJumpsOnUnmount] = useState("");
 
     useEffect(() => {
         if (entityType === "model") {
@@ -41,7 +45,7 @@ const RecordForm = ({
             }
             axios
                 .get("http://localhost:8000/api/manufacturers/", {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {Authorization: `Bearer ${token}`},
                 })
                 .then((res) => setManufacturerOptions(res.data))
                 .catch((err) => console.error("❌ Error al cargar fabricantes:", err));
@@ -50,7 +54,7 @@ const RecordForm = ({
 
     useEffect(() => {
         if (!data) return;
-        let patchedData = { ...data };
+        let patchedData = {...data};
 
         if (
             entityType === "model" &&
@@ -74,13 +78,13 @@ const RecordForm = ({
     }, [data, entityType, manufacturerOptions]);
 
     const handleChange = (field) => (e) => {
-        setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+        setFormData((prev) => ({...prev, [field]: e.target.value}));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (onSave) {
-            const payload = { ...formData };
+            const payload = {...formData};
             if (entityType === "rig") {
                 payload.components = [
                     formData.canopy,
@@ -111,7 +115,7 @@ const RecordForm = ({
                 <Select labelId="model-label" value={formData.model || ""} onChange={handleChange("model")}
                         label="Model">
                     {extraOptions?.models?.map((opt) => <MenuItem key={opt.id}
-                                                                 value={opt.id}>{opt.name}</MenuItem>)}
+                                                                  value={opt.id}>{opt.name}</MenuItem>)}
                 </Select>
             </FormControl>
             <FormControl fullWidth margin="normal" disabled={isViewMode}>
@@ -119,7 +123,7 @@ const RecordForm = ({
                 <Select labelId="size-label" value={formData.size || ""} onChange={handleChange("size")}
                         label="Size">
                     {extraOptions?.sizes?.map((opt) => <MenuItem key={opt.id}
-                                                                value={opt.id}>{opt.size}</MenuItem>)}
+                                                                 value={opt.id}>{opt.size}</MenuItem>)}
                 </Select>
             </FormControl>
             <FormControl fullWidth margin="normal" disabled={isViewMode}>
@@ -127,22 +131,63 @@ const RecordForm = ({
                 <Select labelId="status-label" value={formData.status || ""}
                         onChange={handleChange("status")} label="Status">
                     {extraOptions?.statuses?.map((opt) => <MenuItem key={opt.id}
-                                                                   value={opt.id}>{opt.status}</MenuItem>)}
+                                                                    value={opt.id}>{opt.status}</MenuItem>)}
                 </Select>
             </FormControl>
             <TextField label="Date of Manufacture" type="date" value={formData.dom || ""}
                        onChange={handleChange("dom")} fullWidth margin="normal"
                        InputLabelProps={{shrink: true}} disabled={isViewMode}/>
-            <TextField label="Jumps" type="number" value={formData.jumps || 0}
-                       onChange={handleChange("jumps")} fullWidth margin="normal" disabled={isViewMode}/>
-            <TextField label="AAD Jumps on Mount" type="number" value={formData.aad_jumps_on_mount || 0}
-                       onChange={handleChange("aad_jumps_on_mount")} fullWidth margin="normal"
-                       disabled={isViewMode}/>
+
+            {formData.component_type_name !== "Reserve" && (
+                <TextField
+                    label="Jumps"
+                    type="number"
+                    value={formData.jumps || 0}
+                    onChange={handleChange("jumps")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+
+            {formData.component_type_name !== "AAD" && formData.component_type_name !== "Reserve" && (
+                <TextField
+                    label="AAD Jumps on Mount"
+                    type="number"
+                    value={formData.aad_jumps_on_mount || 0}
+                    onChange={handleChange("aad_jumps_on_mount")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+            {formData.component_type_name === "Reserve" && (
+                <>
+                    <TextField
+                        label="Packs"
+                        type="number"
+                        value={formData.packs || ""}
+                        onChange={handleChange("packs")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+                    <TextField
+                        label="Openings"
+                        type="number"
+                        value={formData.openings || ""}
+                        onChange={handleChange("openings")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+                </>
+            )}
         </>
     );
 
     return (
-        <Paper elevation={4} sx={{ p: 4, borderRadius: 3, maxWidth: 600, mx: "auto" }}>
+        <Paper elevation={4} sx={{p: 4, borderRadius: 3, maxWidth: 600, mx: "auto"}}>
             <Typography variant="h6" gutterBottom>
                 {mode === "create" ? "Crear Registro" : mode === "edit" ? "Editar Registro" : "Detalle del Registro"}
             </Typography>
@@ -152,12 +197,12 @@ const RecordForm = ({
                     <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
                         <Button variant="outlined" onClick={onCancel}>Cerrar</Button>
 
-                        {entityType === "component" && (
+                        {entityType === "component" && !hideMountActions && (
                             isMounted ? (
                                 <Button
                                     variant="contained"
                                     color="warning"
-                                    onClick={() => onUnmount && onUnmount(data.id, currentRigId)}
+                                    onClick={() => setUnmountDialogOpen(true)}
                                 >
                                     Desmontar
                                 </Button>
@@ -182,6 +227,42 @@ const RecordForm = ({
                     </Stack>
                 )}
             </Box>
+            <Dialog open={unmountDialogOpen} onClose={() => setUnmountDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Desmontar Componente</DialogTitle>
+                <DialogContent>
+                    <Typography gutterBottom>
+                        Ingresa el número actual de AAD Jumps para completar el desmontaje.
+                    </Typography>
+                    <TextField
+                        label="AAD Jumps"
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={aadJumpsOnUnmount}
+                        onChange={(e) => setAadJumpsOnUnmount(e.target.value)}
+                    />
+                    <Box mt={2} textAlign="right">
+                        <Button onClick={() => setUnmountDialogOpen(false)} style={{marginRight: 8}}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            onClick={async () => {
+                                if (onUnmount) {
+                                    await onUnmount(data.id, aadJumpsOnUnmount); // pasa id y jumps al padre
+                                }
+                                setUnmountDialogOpen(false);
+                                onCancel(); // Cierra modal principal
+                            }}
+                            disabled={!aadJumpsOnUnmount}
+                        >
+                            Confirmar
+                        </Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
         </Paper>
     );
 };

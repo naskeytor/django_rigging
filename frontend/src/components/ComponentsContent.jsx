@@ -3,6 +3,7 @@ import React, {useEffect, useState, useMemo} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
 import {getComponentColumns} from "../config/componentTableConfig";
+import RecordForm from "../components/RecordForm";
 import {
     Dialog,
     DialogTitle,
@@ -124,11 +125,10 @@ const ComponentsContent = () => {
             });
 
             const filtered = res.data.filter((rig) => {
-                if (componentTypeName.toLowerCase() === "canopy") return !rig.canopy_name;
-                if (componentTypeName.toLowerCase() === "container") return !rig.container_name;
-                if (componentTypeName.toLowerCase() === "reserve") return !rig.reserve_name;
-                if (componentTypeName.toLowerCase() === "aad") return !rig.aad_name;
-                return true;
+                const mountedTypes = rig.components?.map(
+                    (c) => c.component_type_name
+                ) || [];
+                return !mountedTypes.includes(componentTypeName);
             });
 
             setAvailableRigs(filtered);
@@ -212,6 +212,7 @@ const ComponentsContent = () => {
         }
     };
 
+
     return (
         <div style={{color: "white", padding: "20px"}}>
             <h2>Lista de Componentes</h2>
@@ -224,6 +225,7 @@ const ComponentsContent = () => {
                 onDelete={handleDelete}
                 extraOptions={options}
                 componentProps={{onMount: handleMount, onUnmount: handleUnmount}}
+                hideMountActions={true} // 👈 AQUÍ
             />
 
             <Dialog open={rigDetailsOpen} onClose={() => setRigDetailsOpen(false)} maxWidth="sm" fullWidth>
@@ -268,14 +270,11 @@ const ComponentsContent = () => {
                 <DialogContent>
                     <FormControl fullWidth margin="normal">
                         <InputLabel id="rig-select-label">Selecciona Rig</InputLabel>
-                        <Select
-                            labelId="rig-select-label"
-                            value={selectedRigId}
-                            label="Selecciona Rig"
-                            onChange={(e) => setSelectedRigId(e.target.value)}
-                        >
+                        <Select value={selectedRigId} onChange={(e) => setSelectedRigId(e.target.value)}>
                             {availableRigs.map((rig) => (
-                                <MenuItem key={rig.id} value={rig.id}>{rig.rig_number}</MenuItem>
+                                <MenuItem key={rig.id} value={rig.id}>
+                                    {rig.rig_number}
+                                </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -295,6 +294,9 @@ const ComponentsContent = () => {
                     </Box>
                 </DialogContent>
             </Dialog>
+
+
+
         </div>
     );
 };
