@@ -25,7 +25,8 @@ const ModelsContent = () => {
             const formatted = response.data.map((m) => ({
                 id: m.id,
                 name: m.name,
-                manufacturer: m.manufacturer.id, // ✅ usa ID aquí
+                manufacturer: m.manufacturer,           // para el formulario (dropdown)
+                manufacturer_name: m.manufacturer_name, // para mostrar en la tabla
             }));
 
             setModelRows(formatted);
