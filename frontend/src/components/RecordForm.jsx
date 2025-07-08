@@ -99,92 +99,214 @@ const RecordForm = ({
 
     const renderComponentFields = () => (
         <>
-            <TextField label="Serial Number" value={formData.serial_number || ""}
-                       onChange={handleChange("serial_number")} fullWidth margin="normal"
-                       disabled={isViewMode}/>
-            <FormControl fullWidth margin="normal" disabled={isViewMode}>
-                <InputLabel id="component-type-label">Component Type</InputLabel>
-                <Select labelId="component-type-label" value={formData.component_type || ""}
-                        onChange={handleChange("component_type")} label="Component Type">
-                    {extraOptions?.componentTypes?.map((opt) => <MenuItem key={opt.id}
-                                                                          value={opt.id}>{opt.component_type}</MenuItem>)}
-                </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal" disabled={isViewMode}>
-                <InputLabel id="model-label">Model</InputLabel>
-                <Select labelId="model-label" value={formData.model || ""} onChange={handleChange("model")}
-                        label="Model">
-                    {extraOptions?.models?.map((opt) => <MenuItem key={opt.id}
-                                                                  value={opt.id}>{opt.name}</MenuItem>)}
-                </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal" disabled={isViewMode}>
-                <InputLabel id="size-label">Size</InputLabel>
-                <Select labelId="size-label" value={formData.size || ""} onChange={handleChange("size")}
-                        label="Size">
-                    {extraOptions?.sizes?.map((opt) => <MenuItem key={opt.id}
-                                                                 value={opt.id}>{opt.size}</MenuItem>)}
-                </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal" disabled={isViewMode}>
-                <InputLabel id="status-label">Status</InputLabel>
-                <Select labelId="status-label" value={formData.status || ""}
-                        onChange={handleChange("status")} label="Status">
-                    {extraOptions?.statuses?.map((opt) => <MenuItem key={opt.id}
-                                                                    value={opt.id}>{opt.status}</MenuItem>)}
-                </Select>
-            </FormControl>
-            <TextField label="Date of Manufacture" type="date" value={formData.dom || ""}
-                       onChange={handleChange("dom")} fullWidth margin="normal"
-                       InputLabelProps={{shrink: true}} disabled={isViewMode}/>
-
-            {formData.component_type_name !== "Reserve" && (
-                <TextField
-                    label="Jumps"
-                    type="number"
-                    value={formData.jumps || 0}
-                    onChange={handleChange("jumps")}
-                    fullWidth
-                    margin="normal"
-                    disabled={isViewMode}
-                />
-            )}
-
-            {formData.component_type_name !== "AAD" && formData.component_type_name !== "Reserve" && (
-                <TextField
-                    label="AAD Jumps on Mount"
-                    type="number"
-                    value={formData.aad_jumps_on_mount || 0}
-                    onChange={handleChange("aad_jumps_on_mount")}
-                    fullWidth
-                    margin="normal"
-                    disabled={isViewMode}
-                />
-            )}
-            {formData.component_type_name === "Reserve" && (
+            {entityType === "component" && (
                 <>
                     <TextField
-                        label="Packs"
-                        type="number"
-                        value={formData.packs || ""}
-                        onChange={handleChange("packs")}
+                        label="Serial Number"
+                        value={formData.serial_number || ""}
+                        onChange={handleChange("serial_number")}
                         fullWidth
                         margin="normal"
                         disabled={isViewMode}
                     />
+                    <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                        <InputLabel id="component-type-label">Component Type</InputLabel>
+                        <Select
+                            labelId="component-type-label"
+                            value={formData.component_type || ""}
+                            onChange={handleChange("component_type")}
+                            label="Component Type"
+                        >
+                            {extraOptions?.componentTypes?.map((opt) => (
+                                <MenuItem key={opt.id} value={opt.id}>
+                                    {opt.component_type}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                        <InputLabel id="model-label">Model</InputLabel>
+                        <Select
+                            labelId="model-label"
+                            value={formData.model || ""}
+                            onChange={handleChange("model")}
+                            label="Model"
+                        >
+                            {extraOptions?.models?.map((opt) => (
+                                <MenuItem key={opt.id} value={opt.id}>
+                                    {opt.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                        <InputLabel id="size-label">Size</InputLabel>
+                        <Select
+                            labelId="size-label"
+                            value={formData.size || ""}
+                            onChange={handleChange("size")}
+                            label="Size"
+                        >
+                            {extraOptions?.sizes?.map((opt) => (
+                                <MenuItem key={opt.id} value={opt.id}>
+                                    {opt.size}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                        <InputLabel id="status-label">Status</InputLabel>
+                        <Select
+                            labelId="status-label"
+                            value={formData.status || ""}
+                            onChange={handleChange("status")}
+                            label="Status"
+                        >
+                            {extraOptions?.statuses?.map((opt) => (
+                                <MenuItem key={opt.id} value={opt.id}>
+                                    {opt.status}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
                     <TextField
-                        label="Openings"
-                        type="number"
-                        value={formData.openings || ""}
-                        onChange={handleChange("openings")}
+                        label="Date of Manufacture"
+                        type="date"
+                        value={formData.dom || ""}
+                        onChange={handleChange("dom")}
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{shrink: true}}
+                        disabled={isViewMode}
+                    />
+
+                    {formData.component_type_name !== "Reserve" && (
+                        <TextField
+                            label="Jumps"
+                            type="number"
+                            value={formData.jumps || 0}
+                            onChange={handleChange("jumps")}
+                            fullWidth
+                            margin="normal"
+                            disabled={isViewMode}
+                        />
+                    )}
+
+                    {formData.component_type_name !== "AAD" && formData.component_type_name !== "Reserve" && (
+                        <TextField
+                            label="AAD Jumps on Mount"
+                            type="number"
+                            value={formData.aad_jumps_on_mount || 0}
+                            onChange={handleChange("aad_jumps_on_mount")}
+                            fullWidth
+                            margin="normal"
+                            disabled={isViewMode}
+                        />
+                    )}
+
+                    {formData.component_type_name === "Reserve" && (
+                        <>
+                            <TextField
+                                label="Packs"
+                                type="number"
+                                value={formData.packs || ""}
+                                onChange={handleChange("packs")}
+                                fullWidth
+                                margin="normal"
+                                disabled={isViewMode}
+                            />
+                            <TextField
+                                label="Openings"
+                                type="number"
+                                value={formData.openings || ""}
+                                onChange={handleChange("openings")}
+                                fullWidth
+                                margin="normal"
+                                disabled={isViewMode}
+                            />
+                        </>
+                    )}
+                </>
+            )}
+
+            {entityType === "manufacturer" && (
+                <TextField
+                    label="Manufacturer"
+                    value={formData.manufacturer || ""}
+                    onChange={handleChange("manufacturer")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+
+            {entityType === "model" && (
+                <>
+                    <TextField
+                        label="Model Name"
+                        value={formData.name || ""}
+                        onChange={handleChange("name")}
                         fullWidth
                         margin="normal"
                         disabled={isViewMode}
                     />
+
+                    <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                        <InputLabel>Manufacturer</InputLabel>
+                        <Select
+                            value={formData.manufacturer || ""}
+                            onChange={handleChange("manufacturer")}
+                            label="Manufacturer"
+                        >
+                            {extraOptions?.manufacturers?.map((opt) => (
+                                <MenuItem key={opt.id} value={opt.id}>
+                                    {opt.manufacturer}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </>
+            )}
+
+            {entityType === "size" && (
+                <TextField
+                    label="Size"
+                    value={formData.size || ""}
+                    onChange={handleChange("size")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+
+            {entityType === "status" && (
+                <TextField
+                    label="Status"
+                    value={formData.status || ""}
+                    onChange={handleChange("status")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
+            )}
+
+            {entityType === "component_type" && (
+                <TextField
+                    label="Component Type"
+                    value={formData.component_type || ""}
+                    onChange={handleChange("component_type")}
+                    fullWidth
+                    margin="normal"
+                    disabled={isViewMode}
+                />
             )}
         </>
     );
+
 
     return (
         <Paper elevation={4} sx={{p: 4, borderRadius: 3, maxWidth: 600, mx: "auto"}}>
@@ -192,7 +314,7 @@ const RecordForm = ({
                 {mode === "create" ? "Crear Registro" : mode === "edit" ? "Editar Registro" : "Detalle del Registro"}
             </Typography>
             <Box component="form" onSubmit={handleSubmit}>
-                {entityType === "component" && renderComponentFields()}
+                {renderComponentFields()}
                 {isViewMode ? (
                     <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
                         <Button variant="outlined" onClick={onCancel}>Cerrar</Button>
