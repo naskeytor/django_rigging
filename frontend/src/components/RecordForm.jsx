@@ -36,21 +36,6 @@ const RecordForm = ({
     const [unmountDialogOpen, setUnmountDialogOpen] = useState(false);
     const [aadJumpsOnUnmount, setAadJumpsOnUnmount] = useState("");
 
-    useEffect(() => {
-        if (entityType === "model") {
-            const token = sessionStorage.getItem("accessToken");
-            if (!token) {
-                console.error("❌ No hay token para cargar manufacturers");
-                return;
-            }
-            axios
-                .get("http://localhost:8000/api/manufacturers/", {
-                    headers: {Authorization: `Bearer ${token}`},
-                })
-                .then((res) => setManufacturerOptions(res.data))
-                .catch((err) => console.error("❌ Error al cargar fabricantes:", err));
-        }
-    }, [entityType]);
 
     useEffect(() => {
         if (!data) return;
@@ -59,9 +44,9 @@ const RecordForm = ({
         if (
             entityType === "model" &&
             typeof patchedData.manufacturer === "string" &&
-            manufacturerOptions.length > 0
+            extraOptions.manufacturers?.length > 0
         ) {
-            const match = manufacturerOptions.find(
+            const match = extraOptions.manufacturers.find(
                 (m) => m.manufacturer === patchedData.manufacturer
             );
             if (match) patchedData.manufacturer = match.id;

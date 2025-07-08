@@ -42,11 +42,11 @@ class ComponentTypeSerializer(serializers.ModelSerializer):
 
 # 🔹 Model
 class ModelSerializer(serializers.ModelSerializer):
-    manufacturer_name = serializers.CharField(source='manufacturer.manufacturer', read_only=True)
+    manufacturer_name = serializers.CharField(source="manufacturer.manufacturer", read_only=True)
 
     class Meta:
         model = Model
-        fields = '__all__'
+        fields = ['id', 'name', 'manufacturer', 'manufacturer_name']
 
 
 # 🔹 Component
