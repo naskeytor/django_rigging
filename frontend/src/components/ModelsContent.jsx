@@ -5,6 +5,7 @@ import {MODEL_TABLE_COLUMNS} from "../config/modelTableConfig";
 
 const ModelsContent = () => {
     const [modelRows, setModelRows] = useState([]);
+    const [manufacturers, setManufacturers] = useState([]);
 
     const fetchModels = async () => {
         const token = sessionStorage.getItem("accessToken");
@@ -19,10 +20,12 @@ const ModelsContent = () => {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
+            console.log("📦 Models response:", response.data);
+
             const formatted = response.data.map((m) => ({
                 id: m.id,
                 name: m.name,
-                manufacturer: m.manufacturer_name,
+                manufacturer: m.manufacturer.id, // ✅ usa ID aquí
             }));
 
             setModelRows(formatted);
@@ -31,8 +34,34 @@ const ModelsContent = () => {
         }
     };
 
+    // 🔻 Mueve fetchManufacturers aquí, fuera de useEffect
+    const fetchManufacturers = async () => {
+        const token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            console.error("❌ No hay token");
+            return;
+        }
+
+        try {
+            const response = await axios.get("http://localhost:8000/api/manufacturers/", {
+                headers: {Authorization: `Bearer ${token}`},
+            });
+
+            console.log("📦 Manufacturers response:", response.data);
+            setManufacturers(response.data);
+        } catch (err) {
+            console.error("❌ Error al obtener manufacturers:", err);
+        }
+    };
+
     useEffect(() => {
-        fetchModels();
+        const fetchAll = async () => {
+            await fetchManufacturers();
+            await fetchModels();
+        };
+
+        fetchAll();
     }, []);
 
     const handleSave = async (data, mode) => {
@@ -44,11 +73,9 @@ const ModelsContent = () => {
                     `http://localhost:8000/api/models/${data.id}/`,
                     {
                         name: data.name,
-                        manufacturer: data.manufacturer, // ID del fabricante
+                        manufacturer: data.manufacturer,
                     },
-                    {
-                        headers: {Authorization: `Bearer ${token}`},
-                    }
+                    {headers: {Authorization: `Bearer ${token}`}}
                 );
             } else {
                 await axios.post(
@@ -57,15 +84,14 @@ const ModelsContent = () => {
                         name: data.name,
                         manufacturer: data.manufacturer,
                     },
-                    {
-                        headers: {Authorization: `Bearer ${token}`},
-                    }
+                    {headers: {Authorization: `Bearer ${token}`}}
                 );
             }
 
-            await fetchModels(); // Refrescar después de guardar
+            await fetchModels();
         } catch (err) {
             console.error("❌ Error al guardar modelo:", err);
+            console.log("🔴 Response data:", err.response?.data); // 👈 imprime el mensaje exacto del backend
         }
     };
 
@@ -96,6 +122,7 @@ const ModelsContent = () => {
                 entityType="model"
                 onSave={handleSave}
                 onDelete={handleDelete}
+                extraOptions={{manufacturers}} // 👈 ahora manufacturers está definido correctamente
             />
         </div>
     );
