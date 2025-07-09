@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
 import {MANUFACTURER_TABLE_COLUMNS} from "../config/manufacturerTableConfig";
+import axiosInstance from "../axiosInstance";
 
 const ManufacturersContent = () => {
     const [manufacturerRows, setManufacturerRows] = useState([]);
@@ -14,8 +15,8 @@ const ManufacturersContent = () => {
             return;
         }
 
-        axios
-            .get("http://localhost:8000/api/manufacturers/", {
+        axiosInstance
+            .get("api/manufacturers/", {
                 headers: {Authorization: `Bearer ${token}`},
             })
             .then((response) => {
@@ -38,8 +39,8 @@ const ManufacturersContent = () => {
 
         try {
             if (mode === "edit") {
-                await axios.put(
-                    `http://localhost:8000/api/manufacturers/${data.id}/`,
+                await axiosInstance.put(
+                    `api/manufacturers/${data.id}/`,
                     {manufacturer: data.manufacturer},
                     {
                         headers: {Authorization: `Bearer ${token}`},
@@ -47,8 +48,8 @@ const ManufacturersContent = () => {
                 );
                 console.log("✏️ Fabricante actualizado");
             } else {
-                await axios.post(
-                    "http://localhost:8000/api/manufacturers/",
+                await axiosInstance.post(
+                    "api/manufacturers/",
                     {manufacturer: data.manufacturer},
                     {
                         headers: {Authorization: `Bearer ${token}`},
@@ -58,7 +59,7 @@ const ManufacturersContent = () => {
             }
 
             // Actualiza la tabla después de guardar
-            const response = await axios.get("http://localhost:8000/api/manufacturers/", {
+            const response = await axiosInstance.get("api/manufacturers/", {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
@@ -79,7 +80,7 @@ const ManufacturersContent = () => {
         if (!window.confirm(`¿Eliminar fabricante "${manufacturer.manufacturer}"?`)) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/manufacturers/${manufacturer.id}/`, {
+            await axiosInstance.delete(`api/manufacturers/${manufacturer.id}/`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

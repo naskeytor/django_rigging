@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
 import {COMPONENT_TYPE_TABLE_COLUMNS} from "../config/componentTypeTableConfig";
+import axiosInstance from "../axiosInstance";
 
 const ComponentTypesContent = () => {
     const [rows, setRows] = useState([]);
@@ -12,7 +13,7 @@ const ComponentTypesContent = () => {
         if (!token) return;
 
         try {
-            const res = await axios.get("http://localhost:8000/api/component_types/", {
+            const res = await axiosInstance.get("api/component_types/", {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
@@ -37,11 +38,11 @@ const ComponentTypesContent = () => {
 
         try {
             if (mode === "edit") {
-                await axios.put(`http://localhost:8000/api/component_types/${data.id}/`, {
+                await axiosInstance.put(`api/component_types/${data.id}/`, {
                     component_type: data.component_type,
                 }, {headers: {Authorization: `Bearer ${token}`}});
             } else {
-                await axios.post("http://localhost:8000/api/component_types/", {
+                await axiosInstance.post("api/component_types/", {
                     component_type: data.component_type,
                 }, {headers: {Authorization: `Bearer ${token}`}});
             }
@@ -58,7 +59,7 @@ const ComponentTypesContent = () => {
         if (!window.confirm(`¿Eliminar tipo "${record.component_type}"?`)) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/component_types/${record.id}/`, {
+            await axiosInstance.delete(`api/component_types/${record.id}/`, {
                 headers: {Authorization: `Bearer ${token}`},
             });
 

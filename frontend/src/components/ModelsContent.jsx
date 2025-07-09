@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
 import {MODEL_TABLE_COLUMNS} from "../config/modelTableConfig";
+import axiosInstance from "../axiosInstance";
 
 const ModelsContent = () => {
     const [modelRows, setModelRows] = useState([]);
@@ -16,7 +17,7 @@ const ModelsContent = () => {
         }
 
         try {
-            const response = await axios.get("http://localhost:8000/api/models/", {
+            const response = await axiosInstance.get("api/models/", {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
@@ -45,7 +46,7 @@ const ModelsContent = () => {
         }
 
         try {
-            const response = await axios.get("http://localhost:8000/api/manufacturers/", {
+            const response = await axiosInstance.get("api/manufacturers/", {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
@@ -70,8 +71,8 @@ const ModelsContent = () => {
 
         try {
             if (mode === "edit") {
-                await axios.put(
-                    `http://localhost:8000/api/models/${data.id}/`,
+                await axiosInstance.put(
+                    `api/models/${data.id}/`,
                     {
                         name: data.name,
                         manufacturer: data.manufacturer,
@@ -79,8 +80,8 @@ const ModelsContent = () => {
                     {headers: {Authorization: `Bearer ${token}`}}
                 );
             } else {
-                await axios.post(
-                    "http://localhost:8000/api/models/",
+                await axiosInstance.post(
+                    "api/models/",
                     {
                         name: data.name,
                         manufacturer: data.manufacturer,
@@ -102,7 +103,7 @@ const ModelsContent = () => {
         if (!window.confirm(`¿Eliminar modelo "${model.name}"?`)) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/models/${model.id}/`, {
+            await axiosInstance.delete(`api/models/${model.id}/`, {
                 headers: {Authorization: `Bearer ${token}`},
             });
 

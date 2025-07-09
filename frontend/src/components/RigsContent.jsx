@@ -17,6 +17,7 @@ import {
     Menu, TextField,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import axiosInstance from "../axiosInstance";
 
 
 const columns = [
@@ -55,8 +56,8 @@ const RigsContent = () => {
 
         try {
             // Llamamos a tu endpoint personalizado en Django
-            await axios.patch(
-                `http://localhost:8000/api/rigs/${actionRig.id}/update-aad-jumps/`,
+            await axiosInstance.patch(
+                `api/rigs/${actionRig.id}/update-aad-jumps/`,
                 {new_value: parseInt(aadJumpInput, 10)},
                 {headers}
             );
@@ -103,7 +104,7 @@ const RigsContent = () => {
 
         try {
             // ❗ SIN summary=1 para que devuelva los componentes
-            const res = await axios.get("http://localhost:8000/api/rigs/", {headers});
+            const res = await axiosInstance.get("api/rigs/", {headers});
             setRows(res.data);
         } catch (err) {
             console.error("❌ Error al recargar rigs:", err);
@@ -116,8 +117,8 @@ const RigsContent = () => {
 
         try {
             const [rigsRes, componentsRes] = await Promise.all([
-                axios.get("http://localhost:8000/api/rigs/", {headers}),
-                axios.get("http://localhost:8000/api/components/", {headers}),
+                axiosInstance.get("api/rigs/", {headers}),
+                axiosInstance.get("api/components/", {headers}),
             ]);
             setRows(rigsRes.data);
             setComponents(componentsRes.data);
@@ -131,7 +132,7 @@ const RigsContent = () => {
         const headers = {Authorization: `Bearer ${token}`};
 
         const fetchAllComponents = async () => {
-            const res = await axios.get("http://localhost:8000/api/components/", {headers});
+            const res = await axiosInstance.get("api/components/", {headers});
             return res.data;
         };
 
@@ -145,12 +146,12 @@ const RigsContent = () => {
                     sizesRes,
                     statusesRes,
                 ] = await Promise.all([
-                    axios.get("http://localhost:8000/api/rigs/", {headers}),
+                    axiosInstance.get("api/rigs/", {headers}),
                     fetchAllComponents(),
-                    axios.get("http://localhost:8000/api/component_types/", {headers}),
-                    axios.get("http://localhost:8000/api/models/", {headers}),
-                    axios.get("http://localhost:8000/api/sizes/", {headers}),
-                    axios.get("http://localhost:8000/api/statuses/", {headers}),
+                    axiosInstance.get("api/component_types/", {headers}),
+                    axiosInstance.get("api/models/", {headers}),
+                    axiosInstance.get("api/sizes/", {headers}),
+                    axiosInstance.get("api/statuses/", {headers}),
                 ]);
 
                 setRows(rigsRes.data);
@@ -175,7 +176,7 @@ const RigsContent = () => {
         const headers = {Authorization: `Bearer ${token}`};
 
         try {
-            const res = await axios.get(`http://localhost:8000/api/components/${componentId}/`, {headers});
+            const res = await axiosInstance.get(`api/components/${componentId}/`, {headers});
             setSelectedComponent(res.data);
             setComponentMode("view");
         } catch (err) {
@@ -204,7 +205,7 @@ const RigsContent = () => {
                 aad_jumps: isAADorRelated ? parseInt(aadJumpInput, 10) : 0,
             };
 
-            await axios.post(`http://localhost:8000/api/components/${componentId}/mount/`, payload, {headers});
+            await axiosInstance.post(`api/components/${componentId}/mount/`, payload, {headers});
 
             await fetchRigs();
         } catch (err) {
@@ -259,7 +260,7 @@ const RigsContent = () => {
                         const rigId = params.row.id;
                         const token = sessionStorage.getItem("accessToken");
                         const headers = {Authorization: `Bearer ${token}`};
-                        axios.get(`http://localhost:8000/api/rigs/${rigId}/`, {headers})
+                        axiosInstance.get(`api/rigs/${rigId}/`, {headers})
                             .then((res) => setRigInfo(res.data))
                             .catch((err) => console.error("❌ Error al cargar rig:", err));
                     }}
@@ -317,8 +318,8 @@ const RigsContent = () => {
         console.log("🛠️ desmontando:", componentId, aadJumps);
 
         try {
-            await axios.post(
-                `http://localhost:8000/api/components/${componentId}/umount/`,
+            await axiosInstance.post(
+                `api/components/${componentId}/umount/`,
                 {aad_jumps: parseInt(aadJumps, 10)},
                 {headers}
             );
@@ -376,16 +377,16 @@ const RigsContent = () => {
                     };
 
                     if (mode === "create") {
-                        await axios.post("http://localhost:8000/api/rigs/", payload, {headers});
+                        await axiosInstance.post("api/rigs/", payload, {headers});
                     } else {
-                        await axios.put(`http://localhost:8000/api/rigs/${data.id}/`, payload, {headers});
+                        await axiosInstance.put(`api/rigs/${data.id}/`, payload, {headers});
                     }
                     await fetchRigs();
                 }}
                 onDelete={async (row) => {
                     const token = sessionStorage.getItem("accessToken");
                     const headers = {Authorization: `Bearer ${token}`};
-                    await axios.delete(`http://localhost:8000/api/rigs/${row.id}/`, {headers});
+                    await axiosInstance.delete(`api/rigs/${row.id}/`, {headers});
                     setRows((prev) => prev.filter((r) => r.id !== row.id));
                 }}
                 extraOptions={{components}}
@@ -408,14 +409,14 @@ const RigsContent = () => {
                         onDelete={async () => {
                             const token = sessionStorage.getItem("accessToken");
                             const headers = {Authorization: `Bearer ${token}`};
-                            await axios.delete(`http://localhost:8000/api/components/${selectedComponent.id}/`, {headers});
+                            await axiosInstance.delete(`api/components/${selectedComponent.id}/`, {headers});
                             await fetchRigs();
                             setSelectedComponent(null);
                         }}
                         onSave={async (formData, mode) => {
                             const token = sessionStorage.getItem("accessToken");
                             const headers = {Authorization: `Bearer ${token}`};
-                            await axios.put(`http://localhost:8000/api/components/${formData.id}/`, formData, {headers});
+                            await axiosInstance.put(`api/components/${formData.id}/`, formData, {headers});
                             await fetchRigs();
                             setSelectedComponent(null);
                         }}

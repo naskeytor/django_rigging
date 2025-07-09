@@ -289,6 +289,41 @@ const RecordForm = ({
                     disabled={isViewMode}
                 />
             )}
+
+            {entityType === "user" && (
+                <>
+                    <TextField
+                        label="Username"
+                        value={formData.name || ""}
+                        onChange={handleChange("name")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+
+                    <TextField
+                        label="Email"
+                        value={formData.email || ""}
+                        onChange={handleChange("email")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
+
+                    {!isViewMode && (
+                        <TextField
+                            label="Password"
+                            type="password"
+                            value={formData.password || ""}
+                            onChange={handleChange("password")}
+                            fullWidth
+                            margin="normal"
+                        />
+                    )}
+                </>
+            )}
+
+
         </>
     );
 

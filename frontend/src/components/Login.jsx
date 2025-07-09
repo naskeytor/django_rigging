@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import {Visibility, VisibilityOff} from "@mui/icons-material";
+import axiosInstance from "../axiosInstance";
 
 const Login = () => {
     const [username, setUsername] = useState("");
@@ -33,7 +34,7 @@ const Login = () => {
     const handleLogin = async () => {
         try {
             console.log("🔐 Enviando login con:", {username, password});
-            const response = await axios.post("http://localhost:8000/api/auth/login/", {
+            const response = await axiosInstance.post("http://localhost:8000/api/auth/login/", {
                 username,
                 password,
             });

@@ -2,8 +2,7 @@ import React, {useState, useEffect} from "react";
 import axios from "axios";
 import CustomTable from "../components/Table";
 import {USER_TABLE_COLUMNS} from "../config/userTableConfig";
-import RecordForm from "../components/RecordForm";
-import {Dialog, DialogContent} from "@mui/material";
+import axiosInstance from "../axiosInstance";
 
 const UsersContent = () => {
     const [userRows, setUserRows] = useState([]);
@@ -17,8 +16,8 @@ const UsersContent = () => {
             return;
         }
 
-        axios
-            .get("http://localhost:8000/api/users/", {
+        axiosInstance
+            .get("api/users/", {
                 headers: {Authorization: `Bearer ${token}`},
             })
             .then((response) => {
@@ -26,7 +25,7 @@ const UsersContent = () => {
                     id: user.id || index + 1,
                     name: user.username,
                     email: user.email,
-                    group: user.group_name || "N/A",
+                    group: user.group_names && user.group_names.length > 0 ? user.group_names[0] : "",
                 }));
 
                 setUserRows(formattedUsers);
@@ -42,7 +41,7 @@ const UsersContent = () => {
         if (!window.confirm(`¿Estás seguro de que deseas eliminar a ${user.name}?`)) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/users/${user.id}/`, {
+            await axiosInstance.delete(`api/users/${user.id}/`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -62,8 +61,8 @@ const UsersContent = () => {
 
         try {
             if (mode === "edit") {
-                const response = await axios.put(
-                    `http://localhost:8000/api/users/${data.id}/`,
+                const response = await axiosInstance.put(
+                    `api/users/${data.id}/`,
                     {
                         username: data.name,
                         email: data.email,
@@ -77,28 +76,44 @@ const UsersContent = () => {
                 );
                 console.log("✅ Usuario editado");
             } else {
-                const response = await axios.post(
-                    "http://localhost:8000/api/users/",
+                // 🔹 Crear usuario
+                const createResponse = await axiosInstance.post(
+                    "api/users/",
                     {
                         username: data.name,
                         email: data.email,
-                        password: "default123", // puedes usar un campo real o autogenerado
+                        password: "default123",
                     },
                     {headers: {Authorization: `Bearer ${token}`}}
                 );
 
-                const newUser = {
-                    id: response.data.id,
-                    name: response.data.username,
-                    email: response.data.email,
-                    group: response.data.group || "N/A",
+                const newUserId = createResponse.data.id;
+                console.log("🆕 Usuario creado, ID:", newUserId);
+
+                // 🔹 Hacer GET al usuario recién creado para obtener su grupo
+                const getResponse = await axiosInstance.get(
+                    `api/users/${newUserId}/`,
+                    {headers: {Authorization: `Bearer ${token}`}}
+                );
+
+                console.log("📦 Usuario obtenido tras crearlo:", getResponse.data);
+
+                const user = getResponse.data;
+
+                const formattedUser = {
+                    id: user.id,
+                    name: user.username,
+                    email: user.email,
+                    group: user.group_names?.[0] || "N/A",
                 };
 
-                setUserRows((prev) => [...prev, newUser]);
-                console.log("✅ Usuario creado");
+                console.log("✅ Formatted user:", formattedUser);
+
+                setUserRows((prev) => [...prev, formattedUser]);
             }
         } catch (err) {
-            console.error("❌ Error en guardar:", err);
+            console.error("❌ Error en guardar usuario:", err);
+            console.log("🔴 Response data:", err.response?.data);
         }
     };
 
