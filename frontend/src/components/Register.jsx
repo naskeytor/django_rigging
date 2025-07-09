@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 
 
+
 const Register = ({setCurrentView}) => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");

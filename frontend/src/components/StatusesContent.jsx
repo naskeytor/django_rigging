@@ -3,6 +3,7 @@ import React, {useEffect, useState} from "react";
 import axios from "axios";
 import CustomTable from "./Table";
 import {STATUS_TABLE_COLUMNS} from "../config/statusTableConfig";
+import axiosInstance from "../axiosInstance";
 
 const StatusesContent = () => {
     const [statusRows, setStatusRows] = useState([]);
@@ -12,7 +13,7 @@ const StatusesContent = () => {
         if (!token) return;
 
         try {
-            const response = await axios.get("http://localhost:8000/api/statuses/", {
+            const response = await axiosInstance.get("api/statuses/", {
                 headers: {Authorization: `Bearer ${token}`},
             });
 
@@ -37,13 +38,13 @@ const StatusesContent = () => {
 
         try {
             if (mode === "edit") {
-                await axios.put(`http://localhost:8000/api/statuses/${data.id}/`, {
+                await axiosInstance.put(`api/statuses/${data.id}/`, {
                     status: data.status, // 👈 usa "status"
                 }, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
             } else {
-                await axios.post("http://localhost:8000/api/statuses/", {
+                await axiosInstance.post("api/statuses/", {
                     status: data.status, // 👈 usa "status"
                 }, {
                     headers: {Authorization: `Bearer ${token}`},
@@ -62,7 +63,7 @@ const StatusesContent = () => {
         if (!window.confirm(`¿Eliminar estado "${status.status}"?`)) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/statuses/${status.id}/`, {
+            await axiosInstance.delete(`statuses/${status.id}/`, {
                 headers: {Authorization: `Bearer ${token}`},
             });
 

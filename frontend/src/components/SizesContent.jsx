@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import axios from "axios";
+import axiosInstance from "../axiosInstance"; // usa el nuevo axiosInstance
 import CustomTable from "./Table";
 import {SIZE_TABLE_COLUMNS} from "../config/sizeTableConfig";
 
@@ -7,17 +7,8 @@ const SizesContent = () => {
     const [sizeRows, setSizeRows] = useState([]);
 
     const fetchSizes = async () => {
-        const token = sessionStorage.getItem("accessToken");
-
-        if (!token) {
-            console.error("❌ No hay token");
-            return;
-        }
-
         try {
-            const response = await axios.get("http://localhost:8000/api/sizes/", {
-                headers: {Authorization: `Bearer ${token}`},
-            });
+            const response = await axiosInstance.get("/api/sizes/");
 
             const formatted = response.data.map((s) => ({
                 id: s.id,
@@ -35,20 +26,14 @@ const SizesContent = () => {
     }, []);
 
     const handleSave = async (data, mode) => {
-        const token = sessionStorage.getItem("accessToken");
-
         try {
             if (mode === "edit") {
-                await axios.put(`http://localhost:8000/api/sizes/${data.id}/`, {
+                await axiosInstance.put(`/api/sizes/${data.id}/`, {
                     size: data.size,
-                }, {
-                    headers: {Authorization: `Bearer ${token}`},
                 });
             } else {
-                await axios.post("http://localhost:8000/api/sizes/", {
+                await axiosInstance.post("/api/sizes/", {
                     size: data.size,
-                }, {
-                    headers: {Authorization: `Bearer ${token}`},
                 });
             }
 
@@ -59,14 +44,10 @@ const SizesContent = () => {
     };
 
     const handleDelete = async (size) => {
-        const token = sessionStorage.getItem("accessToken");
-
         if (!window.confirm(`¿Eliminar tamaño "${size.size}"?`)) return;
 
         try {
-            await axios.delete(`http://localhost:8000/api/sizes/${size.id}/`, {
-                headers: {Authorization: `Bearer ${token}`},
-            });
+            await axiosInstance.delete(`/api/sizes/${size.id}/`);
 
             setSizeRows((prev) => prev.filter((s) => s.id !== size.id));
         } catch (err) {
