@@ -26,7 +26,7 @@ const UsersContent = () => {
                     id: user.id || index + 1,
                     name: user.username,
                     email: user.email,
-                    group: user.group_name || "N/A",
+                    group: user.group_names && user.group_names.length > 0 ? user.group_names[0] : "",
                 }));
 
                 setUserRows(formattedUsers);
@@ -77,28 +77,44 @@ const UsersContent = () => {
                 );
                 console.log("✅ Usuario editado");
             } else {
-                const response = await axios.post(
+                // 🔹 Crear usuario
+                const createResponse = await axios.post(
                     "http://localhost:8000/api/users/",
                     {
                         username: data.name,
                         email: data.email,
-                        password: "default123", // puedes usar un campo real o autogenerado
+                        password: "default123",
                     },
                     {headers: {Authorization: `Bearer ${token}`}}
                 );
 
-                const newUser = {
-                    id: response.data.id,
-                    name: response.data.username,
-                    email: response.data.email,
-                    group: response.data.group || "N/A",
+                const newUserId = createResponse.data.id;
+                console.log("🆕 Usuario creado, ID:", newUserId);
+
+                // 🔹 Hacer GET al usuario recién creado para obtener su grupo
+                const getResponse = await axios.get(
+                    `http://localhost:8000/api/users/${newUserId}/`,
+                    {headers: {Authorization: `Bearer ${token}`}}
+                );
+
+                console.log("📦 Usuario obtenido tras crearlo:", getResponse.data);
+
+                const user = getResponse.data;
+
+                const formattedUser = {
+                    id: user.id,
+                    name: user.username,
+                    email: user.email,
+                    group: user.group_names?.[0] || "N/A",
                 };
 
-                setUserRows((prev) => [...prev, newUser]);
-                console.log("✅ Usuario creado");
+                console.log("✅ Formatted user:", formattedUser);
+
+                setUserRows((prev) => [...prev, formattedUser]);
             }
         } catch (err) {
-            console.error("❌ Error en guardar:", err);
+            console.error("❌ Error en guardar usuario:", err);
+            console.log("🔴 Response data:", err.response?.data);
         }
     };
 

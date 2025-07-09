@@ -1,15 +1,22 @@
 from rest_framework import serializers
 from .models import (
     User, Manufacturer, Size, Status, ComponentType,
-    Model, Component, Rig, RiggingType, Rigging
+    Model, Component, Rig, RiggingType, Rigging, Group
 )
 
 
 # 🔹 User
 class UserSerializer(serializers.ModelSerializer):
+    group_names = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "username", "email"]
+        fields = ['id', 'username', 'email', 'group_names']  # ⚠️ incluye group_names aquí
+
+    def get_group_names(self, obj):
+        # obj es un usuario
+        return [group.name for group in obj.groups.all()]
+
 
 
 # 🔹 Manufacturer

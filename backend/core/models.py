@@ -14,6 +14,14 @@ class UserManager(BaseUserManager):
         user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+
+        # 🔹 Asignar al grupo 'user' por defecto
+        try:
+            user_group, created = Group.objects.get_or_create(name='user')
+            user.groups.add(user_group)
+        except Exception as e:
+            print(f"❌ Error al asignar grupo 'user' al crear usuario: {e}")
+
         return user
 
     def create_superuser(self, username, email=None, password=None, **extra_fields):
