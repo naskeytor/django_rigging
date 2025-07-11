@@ -3,13 +3,11 @@ from django.shortcuts import render
 # Create your views here.
 from django.contrib.auth.models import Group
 from rest_framework import viewsets, status
-from .models import User, Role, Manufacturer, Size, Status, ComponentType, Model, Component, Rig, Rigging
-from .serializers import UserSerializer, RoleSerializer, ManufacturerSerializer, SizeSerializer, StatusSerializer, ComponentTypeSerializer, ModelSerializer, ComponentSerializer, RigSerializer, RiggingSerializer
+from .models import  Manufacturer, Size, Status, ComponentType, Model, Component, Rig, Rigging, Lineset, Drogue
+from .serializers import (UserSerializer, ManufacturerSerializer, SizeSerializer, StatusSerializer, ComponentTypeSerializer,
+                          ModelSerializer, ComponentSerializer, RigSerializer, RiggingSerializer, LinesetSerializer, DrogueSerializer)
 
 
-class RoleViewSet(viewsets.ModelViewSet):
-    queryset = Role.objects.all()
-    serializer_class = RoleSerializer
 
 class ManufacturerViewSet(viewsets.ModelViewSet):
     queryset = Manufacturer.objects.all()
@@ -43,3 +41,13 @@ class RigViewSet(viewsets.ModelViewSet):
 class RiggingViewSet(viewsets.ModelViewSet):
     queryset = Rigging.objects.all()
     serializer_class = RiggingSerializer
+
+
+class LinesetViewSet(viewsets.ModelViewSet):
+    queryset = Lineset.objects.all()
+    serializer_class = LinesetSerializer
+
+
+class DrogueViewSet(viewsets.ModelViewSet):
+    queryset = Drogue.objects.all()
+    serializer_class = DrogueSerializer

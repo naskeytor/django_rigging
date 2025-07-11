@@ -13,6 +13,9 @@ from core.views.component_views import ComponentViewSet
 from core.views.rig_views import RigViewSet
 from core.views.rigging_views import RiggingViewSet
 from core.views.test_views import test_connection
+from core.views.lineset_views import LinesetViewSet
+from core.views.drogue_views import DrogueViewSet
+
 
 
 # 🔹 Definir el router y registrar los ViewSets
@@ -26,6 +29,9 @@ router.register(r'models', ModelViewSet)
 router.register(r'components', ComponentViewSet)
 router.register(r'rigs', RigViewSet)
 router.register(r'riggings', RiggingViewSet)
+router.register(r'linesets', LinesetViewSet)
+router.register(r'drogues', DrogueViewSet)
+
 
 # 🔹 Definir las rutas
 urlpatterns = [

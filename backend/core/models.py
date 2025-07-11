@@ -34,7 +34,6 @@ class UserManager(BaseUserManager):
         return self.create_user(username, email, password, **extra_fields)
 
 
-
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=100, unique=True)
     email = models.EmailField(unique=True)
@@ -115,7 +114,6 @@ class Component(models.Model):
     )
     packs = models.IntegerField(null=True, blank=True)
     openings = models.IntegerField(null=True, blank=True)
-
 
     def __str__(self):
         return self.serial_number
@@ -207,41 +205,42 @@ class Rigging(models.Model):
         return f"{self.date} - {self.type_rigging} - {self.component.serial_number} ({self.rig.rig_number if self.rig else 'No Rig'})"
 
 
+class Lineset(models.Model):
+    serial_number = models.CharField(max_length=50)
+    line_type = models.CharField(max_length=50)
+    jumps = models.IntegerField(default=0)
+    aad_jumps_on_mount = models.IntegerField(null=True, blank=True)
 
-    class Lineset(models.Model):
-        serial_number = models.CharField(max_length=50)
-        line_type = models.CharField(max_length=50)
-        jumps = models.IntegerField(default=0)
-        aad_jumps_on_mount = models.IntegerField(null=True, blank=True)
+    # Relación opcional con Component (Canopy)
+    canopy = models.ForeignKey(
+        'Component',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='linesets'
+    )
 
-        # Relación opcional con Component (Canopy)
-        canopy = models.ForeignKey(
-            'Component',
-            on_delete=models.SET_NULL,
-            null=True,
-            blank=True,
-            related_name='linesets'
-        )
+    def __str__(self):
+        return f"{self.serial_number} ({self.line_type})"
 
-        def __str__(self):
-            return f"{self.serial_number} ({self.line_type})"
 
-    class Drogue(models.Model):
-        serial_number = models.CharField(max_length=50)
-        line_type = models.CharField(max_length=50)
-        jumps = models.IntegerField(default=0)
-        aad_jumps_on_mount = models.IntegerField(null=True, blank=True)
-        killline_jumps_on_mount = models.IntegerField(null=True, blank=True)
-        kill_line_jumps = models.IntegerField(default=0)
+class Drogue(models.Model):
+    serial_number = models.CharField(max_length=50)
+    line_type = models.CharField(max_length=50)
+    jumps = models.IntegerField(default=0)
+    aad_jumps_on_mount = models.IntegerField(null=True, blank=True)
+    killline_jumps_on_mount = models.IntegerField(null=True, blank=True)
+    kill_line_jumps = models.IntegerField(default=0)
 
-        # Relación opcional con Component (Container o Canopy, según tu lógica)
-        canopy = models.ForeignKey(
-            'Component',
-            on_delete=models.SET_NULL,
-            null=True,
-            blank=True,
-            related_name='drogues'
-        )
+    # Relación opcional con Component (Container o Canopy, según tu lógica)
+    container = models.ForeignKey(
+        'Component',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='drogues'
+    )
 
-        def __str__(self):
-            return f"{self.serial_number} ({self.line_type})"
+
+    def __str__(self):
+        return f"{self.serial_number} ({self.line_type})"
