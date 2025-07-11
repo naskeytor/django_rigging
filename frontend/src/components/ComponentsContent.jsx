@@ -183,6 +183,7 @@ const ComponentsContent = () => {
             dom: data.dom,
             jumps: data.jumps,
             aad_jumps_on_mount: data.aad_jumps_on_mount,
+            usage_type: data.usage_type,
         };
         try {
             if (mode === "edit") {

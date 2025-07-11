@@ -11,9 +11,9 @@ from core.views.component_type_views import ComponentTypeViewSet
 from core.views.model_views import ModelViewSet
 from core.views.component_views import ComponentViewSet
 from core.views.rig_views import RigViewSet
-from core.views.rigging_type_views import RiggingTypeViewSet
 from core.views.rigging_views import RiggingViewSet
 from core.views.test_views import test_connection
+
 
 # 🔹 Definir el router y registrar los ViewSets
 router = DefaultRouter()
@@ -25,7 +25,6 @@ router.register(r'component_types', ComponentTypeViewSet)
 router.register(r'models', ModelViewSet)
 router.register(r'components', ComponentViewSet)
 router.register(r'rigs', RigViewSet)
-router.register(r'rigging_types', RiggingTypeViewSet)
 router.register(r'riggings', RiggingViewSet)
 
 # 🔹 Definir las rutas

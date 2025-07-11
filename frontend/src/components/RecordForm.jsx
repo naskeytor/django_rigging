@@ -158,6 +158,20 @@ const RecordForm = ({
                         </Select>
                     </FormControl>
 
+                    <FormControl fullWidth margin="normal" disabled={isViewMode}>
+                        <InputLabel id="usage-type-label">Usage Type</InputLabel>
+                        <Select
+                            labelId="usage-type-label"
+                            value={formData.usage_type || "Sport"}
+                            onChange={handleChange("usage_type")}
+                            label="Usage Type"
+                        >
+                            <MenuItem value="Sport">Sport</MenuItem>
+                            <MenuItem value="Tandem">Tandem</MenuItem>
+                            <MenuItem value="Emergency">Emergency</MenuItem>
+                        </Select>
+                    </FormControl>
+
                     <TextField
                         label="Date of Manufacture"
                         type="date"
@@ -320,6 +334,19 @@ const RecordForm = ({
                             margin="normal"
                         />
                     )}
+                </>
+            )}
+
+            {entityType === "rig" && (
+                <>
+                    <TextField
+                        label="Rig Number"
+                        value={formData.rig_number || ""}
+                        onChange={handleChange("rig_number")}
+                        fullWidth
+                        margin="normal"
+                        disabled={isViewMode}
+                    />
                 </>
             )}
 

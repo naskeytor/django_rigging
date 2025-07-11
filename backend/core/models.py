@@ -1,9 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
-from datetime import date
-
-
-
+from datetime import date, timezone
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -96,6 +94,12 @@ class Model(models.Model):
 
 
 class Component(models.Model):
+    USAGE_TYPE_CHOICES = [
+        ('Sport', 'Sport'),
+        ('Tandem', 'Tandem'),
+        ('Emergency', 'Emergency'),
+    ]
+
     component_type = models.ForeignKey(ComponentType, on_delete=models.CASCADE, related_name='components')
     model = models.ForeignKey(Model, on_delete=models.SET_NULL, null=True, related_name='components')
     serial_number = models.CharField(max_length=50)
@@ -104,7 +108,11 @@ class Component(models.Model):
     status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, related_name='components')
     jumps = models.IntegerField(default=0)
     aad_jumps_on_mount = models.IntegerField(default=0)
-
+    usage_type = models.CharField(
+        max_length=20,
+        choices=USAGE_TYPE_CHOICES,
+        default='Sport'
+    )
     packs = models.IntegerField(null=True, blank=True)
     openings = models.IntegerField(null=True, blank=True)
 
@@ -142,22 +150,59 @@ class Rig(models.Model):
                 comp.save()
 
 
-class RiggingType(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.CharField(max_length=255, blank=True, null=True)
-
-    def __str__(self):
-        return self.name
-
-
 class Rigging(models.Model):
-    date = models.DateField(default=date.today)
-    serial_numbers = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    rigger = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='riggings')
-    rig = models.ForeignKey(Rig, on_delete=models.SET_NULL, null=True, related_name='riggings')
-    component = models.ForeignKey(Component, on_delete=models.SET_NULL, null=True, related_name='riggings')
-    type_rigging = models.ForeignKey(RiggingType, on_delete=models.CASCADE, related_name='riggings')
+    RIGGING_TYPES = [
+        ("I+R", "Inspection + Repack"),
+        ("Reparation", "Reparation"),
+        ("Fabrication", "Fabrication"),
+    ]
+
+    date = models.DateField(default=timezone.now)
+
+    rigger = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="riggings",
+        help_text="Rigger assigned to this work"
+    )
+
+    type_rigging = models.CharField(
+        max_length=20,
+        choices=RIGGING_TYPES,
+        default="I+R"
+    )
+
+    component = models.ForeignKey(
+        "Component",
+        on_delete=models.CASCADE,
+        related_name="riggings",
+        help_text="Component involved in this rigging",
+        null=True
+    )
+
+    rig = models.ForeignKey(
+        "Rig",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="riggings",
+        help_text="Rig associated with this rigging"
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text="Description of the work done",
+        null=True
+    )
+
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0.00
+    )
 
     def __str__(self):
-        return f'Rigging {self.id} on {self.date}'
+        return f"{self.date} - {self.type_rigging} - {self.component.serial_number} ({self.rig.rig_number if self.rig else 'No Rig'})"
+
