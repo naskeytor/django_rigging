@@ -1,9 +1,8 @@
 from rest_framework import serializers
 from .models import (
     User, Manufacturer, Size, Status, ComponentType,
-    Model, Component, Rig, RiggingType, Rigging, Group
+    Model, Component, Rig, Rigging, Lineset, Drogue
 )
-
 
 # 🔹 User
 class UserSerializer(serializers.ModelSerializer):
@@ -86,6 +85,7 @@ class ComponentSerializer(serializers.ModelSerializer):
             'size_name',
             'status_name',
             'rigs',  # 🔹 Incluir aquí también
+            'usage_type'
         ]
 
 
@@ -128,10 +128,7 @@ class RigWriteSerializer(serializers.ModelSerializer):
 
 
 # 🔹 Rigging Type
-class RiggingTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RiggingType
-        fields = '__all__'
+
 
 
 # 🔹 Rigging
@@ -177,3 +174,15 @@ class RigSummarySerializer(serializers.ModelSerializer):
             "id", "rig_number", "current_aad_jumps",
             "canopy_name", "container_name", "reserve_name", "aad_name"
         ]
+
+
+class LinesetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lineset
+        fields = '__all__'
+
+
+class DrogueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Drogue
+        fields = '__all__'
