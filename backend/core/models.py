@@ -206,3 +206,42 @@ class Rigging(models.Model):
     def __str__(self):
         return f"{self.date} - {self.type_rigging} - {self.component.serial_number} ({self.rig.rig_number if self.rig else 'No Rig'})"
 
+
+
+    class Lineset(models.Model):
+        serial_number = models.CharField(max_length=50)
+        line_type = models.CharField(max_length=50)
+        jumps = models.IntegerField(default=0)
+        aad_jumps_on_mount = models.IntegerField(null=True, blank=True)
+
+        # Relación opcional con Component (Canopy)
+        canopy = models.ForeignKey(
+            'Component',
+            on_delete=models.SET_NULL,
+            null=True,
+            blank=True,
+            related_name='linesets'
+        )
+
+        def __str__(self):
+            return f"{self.serial_number} ({self.line_type})"
+
+    class Drogue(models.Model):
+        serial_number = models.CharField(max_length=50)
+        line_type = models.CharField(max_length=50)
+        jumps = models.IntegerField(default=0)
+        aad_jumps_on_mount = models.IntegerField(null=True, blank=True)
+        killline_jumps_on_mount = models.IntegerField(null=True, blank=True)
+        kill_line_jumps = models.IntegerField(default=0)
+
+        # Relación opcional con Component (Container o Canopy, según tu lógica)
+        canopy = models.ForeignKey(
+            'Component',
+            on_delete=models.SET_NULL,
+            null=True,
+            blank=True,
+            related_name='drogues'
+        )
+
+        def __str__(self):
+            return f"{self.serial_number} ({self.line_type})"
